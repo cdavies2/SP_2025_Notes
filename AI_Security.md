@@ -4,7 +4,7 @@
 * Malicious entities often use AI to spread malware, and infect both code and datasets. AI vulnerabilities also can be used to execute data breaches.
 * The AI in cybersecurity market is expected to reach $60.6 billion by 2028, displaying that AI will be often utilized to identify and mitigate attacks caused by AI.
 
-##AI Security Risks
+## AI Security Risks
 * Increased Attack Surface-the integration of generative AI into software development life cycles (SDLCs) inherently changes an organization's IT infrastructure and introduces new risks. The main security challenge with AI is ensuring that all of its infrastructure is managed by appropriate security teams. Visibility of AI infrastructure can help remediate vulnerabilities, reduce risks, and limit the attack surface.
 * Higher Likelihood of Data Breaches and Leaks-according to The Independent, 43 million sensitive records were compormised in just August 2023. The risks of such attacks include finacial damages, activity disruption, and reputational harm
 * Chatbot Credential Theft-more than 100,000 ChatGPT accounts were compromised between 2022 and 2023.
@@ -18,7 +18,7 @@
 * Indirect Prompt Injections-a threat actor pushes a Generative AI model towards an untrustworthy data source to influence its actions. Risks of this include execution of malicious code, data leaks, and providing misinformation to users.
 * Hallucination abuse-AI can hallucinate information. Malicious actors sometimes work to "legitimize" hallucinations, thus giving end users information influenced by them
 
-##AI Security Frameworks and Standards
+## AI Security Frameworks and Standards
 * NIST's Artificial Intelligence Risk Management Framework-has four functions: govern, map, measure, and manage
 * Mitre's Sensible Regulatory Framework for AI Security and ATLAS Matrix
 * OWASP's Top 10 for LLMs identifies and proposes standards to protect critical LLM vulnerabilities
