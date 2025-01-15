@@ -73,6 +73,42 @@ Source: https://aws.amazon.com/what-is/unit-testing/#:~:text=Unit%20testing%20is
 # Unittest Python
 * The unittest framework supports test automation, sharing setup/shutdown code for tests, aggregation of tests into collections, and independence of tests from reporting framework.
 
+## Example code
+```
+import unittest
+
+class TestStringMethods(unittest.TestCase):
+
+    def test_index(self):
+        list1=[0, 1, 2, 3, 4]
+        self.assertEqual(0, list1[0]) 
+    
+    
+    def test_prime(self):
+        x=5
+        isPrime=True
+        for i in range(2, x-1):
+            if(x%i==0):
+                isPrime=False
+        self.assertTrue(isPrime==True)
+        self.assertFalse(isPrime==False)
+
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
+
+    def test_split(self):
+        s = 'hello world'
+        self.assertEqual(s.split(), ['hello', 'world'])
+        # check that s.split fails when the separator is not a string
+        with self.assertRaises(TypeError):
+            s.split(2)
+if __name__ == '__main__':
+    unittest.main()
+
+    #the number of tests ran is output, "OK" is output if there were no assert errors, all did what it should
+```
+* assertEqual checks for an expected result, assertTrue() and assertFalse() verify conditions, assertRaises() makes sure a specific exception gets raised. These are used instead of the assert statement to ensure that all test results can be put together into a report.
 ## TestCase class methods
 * assertEqual(a,b) : checks that a==b
 * assertNotEqual(a,b): checks a!=b
