@@ -49,3 +49,15 @@
 ## Demonstrations of Hidden Injections
 * Multi-stage Exploit-a small injection in a large section of regular content can trigger an LLM to fetch another, possibly bigger, payload autonomously. The attacker plants payloads on a public website and its server, the user asks for information, the assistant fetches it from the website (including the initial payload), and the LLM fetches the secondary payload and responds to the user. A secondary payload is not visible to the user, so it can be as long or conspicuous as needed
 * Encoded Injections-much like how obfuscation of malicious code can be used to bypass defenses, attackers can hide injections by encoding the prompts. For instance, a prompt could be given as a Base64 string, and the model could bt prompted to decode it.
+
+## Limitations
+* Experimental Setup-the previously described attacks were tested on synthetic applications and local HTML files to avoid damaging real-world applications.
+* Evaluation-quantifying attack success rate is difficult, considering how continuing to chat with users helps assistants evolve. Many factors need to be examined, like how often injected prompts are triggered based on a user's initial instructions and how convincing and consistent the manipulation is. It is also important to evaluate attacks via multiple generations/variations of prompts and topics. However, prompt generation can be performed with little sophistication, even leaving grammatical errors in the prompts.
+* Deception and Believability-newer LLms are much better at following elaborate instructions. This has some issues...
+ * The model might generate false information in an unbelievable manner
+ * The model can attempt to get users to follow links in a more obvious way
+* Carefully crafted prompts tend to lead to more believable deception
+* When models improve their planning and coherency skills, their deception and persuasion abilities are likely to improve as well.
+
+Source: https://arxiv.org/abs/2302.12173 (Submission)
+https://arxiv.org/pdf/2302.12173 (PDF)
