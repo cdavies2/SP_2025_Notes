@@ -56,3 +56,86 @@ globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persist
 ```
 globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -stop
 ```
+# Conda Virtual Env
+* The directories used by Conda for packages and default virtual env paths can be set in ~/.condarc, but that, like other ~/.* files, are lost when the sciserver container restarts.
+* It is suggested to create an init script in your persistent storage, and run it whenever you start or restart the container.
+* A .condarc file looks like this
+```
+envs_dirs:
+  - /home/idies/workspace/Storage/{YourUsername}/persistent/conda/conda_envs
+pkgs_dirs:
+  - /home/idies/workspace/Storage/{YourUserName}/persistent/conda/conda_pkgs
+```
+* A sample init.sh script you run every time you start/restart the container looks as seen below
+```
+#/bin/bash
+
+
+# script you run every time your container start or restart
+#to customize container
+
+#username can be found in ls  ${HOME}/workspace/Storage/
+MY_USERNAME=johndoe
+
+
+export MY_TMPDIR=${HOME}/workspace/Temporary/${MY_USERNAME}/scratch/tmp
+
+
+#if you need to preserve those directories, 
+rm -rf ~/.cache
+if [ ! -d ${MY_TMPDIR}/.cache ] ; then
+ mkdir -p ${MY_TMPDIR}/.cache
+fi
+ln -s ${MY_TMPDIR}/.cache ${HOME}/.cache
+
+
+# if you have  customerized .bashrc etc , copy it over or link it.
+export my_username=$(ls /home/idies/workspace/Storage)
+if [ -f /home/idies/workspace/Storage/${my_username}/persistent/init/.bashrc ]; then
+cp  /home/idies/workspace/Storage/${my_username}/persistent/init/.bashrc ${HOME}/.bashrc
+ ln -sf  /home/idies/workspace/Storage/${my_username}/persistent/init/.bashrc ${HOME}/.bashrc
+fi
+
+
+# if you use conda env  and have .condarc might want cp or link
+if [ -f /home/idies/workspace/Storage/${my_username}/persistent/conda/.condarc ] ; then
+cp  /home/idies/workspace/Storage/${my_username}/persistent/conda/.condarc ${HOME}/
+ln -sf  /home/idies/workspace/Storage/${my_username}/persistent/conda/.condarc ${HOME}/.condarc
+fi
+
+
+# if you have created your own jupyter kernels
+# and made backup from ./local/hare/jupyter/kernels/
+# you can copy back to container or link it
+# if you want you can relink whole .local folder too
+if [ -d /home/idies/workspace/Storage/${my_username}/persistent/conda/jupyter_kernels ] ; then
+ #cp  -r /home/idies/workspace/Storage/${my_username}/persistent/conda/jupyter_kernels/* ${HOME}/.local/share/jupyter/kernels/
+ # or use link
+ rm -rf ${HOME}/.local/share/jupyter/kernels/        # assume you have backup
+ ln -s  /home/idies/workspace/Storage/${my_username}/persistent/conda/jupyter_kernels ${HOME}/.local/share/jupyter/kernels
+fi
+## some other .files/directories you may have made backup
+# e.g. .mozilla
+if [  ! -d /home/idies/workspace/Storage/${my_username}/persistent/init/.mozilla ]; then
+ mkdir /home/idies/workspace/Storage/${my_username}/persistent/init/.mozilla
+fi
+if [ -d /home/idies/.mozilla ] ; then
+ rm -rf /home/idies/.mozilla
+fi
+ln -s /home/idies/workspace/Storage/${my_username}/persistent/init/.mozilla /home/idies/.mozilla
+
+```
+* The conda virtualenv can be created as so
+```
+conda create -n my_testenv  python=3.10
+#activate env
+source activate my_testenv
+```
+* Install packages with this command
+```
+#install packages use conda 
+conda install numpy
+#install package use pip
+pip install torch torchvision torchaudio
+```
+Source: https://sciserver.sdcc.bnl.gov/scisrvdoc/03_conda_env/condaenv.html
