@@ -24,4 +24,35 @@
 
 ## Use dtn Container for ssh/sftp Based Data Transfer
 * On SciServer compute, you can create and start a container in "sciserver-dtn1" compute domain using the "vcn-kde-dtn" image. Make sure to mount the volumes you wish to transfer data to/from you create the container, some user volumes aren't mounted by default.
-* 
+* This domain has outgoing ssh access to the Internet. From the terminal you can start ssh/scp/sftp/rsync sessions the internet ssh/sftp servers. It also makes ssh-key based git push/pull easier.
+* Remember, stop the container after data transfer.
+
+## Use Globus Personal Connect Client
+* Useful in transferring data between sciserver and data on a public Globus Endpoint
+
+## Initial Setup for Using Globus on SciServer
+1. Start a SciServer Session using the sciserver-dtnl domain and the vnc-kde-dtn image
+2. Create a personal globus endpoint: create an endpoint (with a name), generate a key for setup and copy it
+3. Start Globus Connect Personal and use the key to setup your personal endpoint   
+```
+globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -setup --setup-key ${your_setup_key}
+```
+4. Start your Globus Connect Personal endpoint
+```
+globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -start &
+```
+* You should now be able to see your personal endpoint via the Collection search bar
+5.  Stop your endpoint
+```
+globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -stop
+```
+
+## Regular Use
+* After completing the initial setup as detailed above, your globus-related dot files should be stored in a persistent storage location, so you can start and stop the endpoint by using the commands below.
+
+```
+globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -start &
+```
+```
+globusconnectpersonal -dir /home/idies/workspace/Storage/[your_username]/persistent/.globusonline -stop
+```
