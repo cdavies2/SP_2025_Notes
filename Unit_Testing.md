@@ -68,3 +68,22 @@ test_mult_pos_neg()
 * Acceptance testing is when the software is tested manually by stakeholders or user groups to make sure it's working as they anticipatw
 * Security testing checks the software against known vulnerabilities and threats. This includes analysis of the threat surface, including third-party software entry points.
 * The above testing methods typically require specialized tools and independent processes to check them, and are performed once the basic functions of the application have been developed. However, unit tests run whenever the code builds, can be written immediately as code is written and don't need any special tools.
+Source: https://aws.amazon.com/what-is/unit-testing/#:~:text=Unit%20testing%20is%20the%20process,test%20for%20each%20code%20unit.
+
+# Unittest Python
+* The unittest framework supports test automation, sharing setup/shutdown code for tests, aggregation of tests into collections, and independence of tests from reporting framework.
+
+## TestCase class methods
+* assertEqual(a,b) : checks that a==b
+* assertNotEqual(a,b): checks a!=b
+* assertTrue(x): checks bool(x) is True
+* assertFalse(x): checks bool(x) is False
+* assertIs(a,b): checks a is b
+* assertIsNot(a, b): checks a is not b
+* assertIsNone(x): checks x is None
+* assertIsNotNone(x): checks x is not None
+* assertIn(a, b): checks a in b
+* assertNotIn(a,b): checks a not in b
+* assertIsInstance(a,b): checks isinstance(a,b) (checks if the member is in the container)
+* assertNotIsInstance(a,b): checks not isinstance(a,b)
+Source: https://docs.python.org/3/library/unittest.html#assert-methods
