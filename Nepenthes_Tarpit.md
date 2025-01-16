@@ -106,4 +106,52 @@ curl -XPOST -d ./@corpus.txt -H'Content-type: text/plain' http://localhost:8893/
 * Source: https://zadzmo.org/code/nepenthes/
 
 # robots.txt
-* robots.txt refers to the filename for implementing the Robots Exclusion Protocol, a standard meant to indicate to web crawlers and other bots which parts of a site that they are allowed to visit.
+* robots.txt refers to the filename for implementing the Robots Exclusion Protocol, a standard meant to indicate to web crawlers and other bots which parts of a site that they are allowed to visit. The standard is not directly enforced, it relies on voluntary compliance.
+* In recent years, many sites have modified the standard to deny bots that collect information for generative AI.
+
+## Standard
+* When a site owner wishes to give instructions to web robots, they place the robots.txt file in the root of the website heirarchy. The robots who choose to follow the file's instructions fetch this file from the site before any others, and if the file doesn't exist, bots assume that the site has no crawling limitations.
+* A robots.txt file will function as a request that specified robots ignore specified files or directories when crawling a site (EX: out of preference for privacy from search engine results or the belief that the content of the selected directories might be misleading or irrelevant to the categorization of the site as a whole, or out of a desire that an application only operates on specific data.
+* A robots.txt file only covers one origin. Therefore, websites with multiple subdomains must give each one its own robots.txtfile. Each protocol and port also needs its own robots.txt file (EX: http://example.com/robots.txt does not apply to pages under http://example.com:8080/)
+
+## Compliance
+* Major search engines, like Google, Bing, AOL, and Yahoo! all follow the robots.txt standard.
+* Many web operators use robots.txt to prevent bots from collecting data from their websites that would be used to train generative AI. It was found in 2023 that three hundred and six of the top thousand most-visited websites blocked OpenAI's GPTBot in their robots.txt file and 85 blocked Google's Google-Extended. News websites like the BBC and The New York Times, along with blog hosts like Medium deny access to GPTBot.
+* GPTBot now complies with the robots.txt standard, but this only began after it had been trained.
+
+## Examples
+* Below means that all robots can visit all files (asterisk is a wildcard)
+```
+User-agent: *
+Disallow:    --doesn't prohibit any files
+or
+User-agent:*
+Allow: /     --allows all files
+```
+* Below means no robots are allowed on a site
+```
+User-agent: *
+Disallow: /
+```
+* Below tells the bots to not enter two specific directories
+```
+User-agent: *
+Disallow: /tmp/
+Disallow: /junk/
+```
+* Below tells bots to avoid a specific file
+```
+User-agent: *
+Disallow: /directory/file.html
+```
+* Below blocks a specific bot from a specific directory
+```
+User-agent: Googlebot
+Disallow: /private
+```
+* Below blocks a specific bot entirely
+```
+User-agent: GPTBot
+Disallow: /
+```
+* 
