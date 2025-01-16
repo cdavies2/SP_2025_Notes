@@ -27,9 +27,6 @@
 * This jailbreak displays that while LLMs like Llama3 can refuse certain harmful instructions, they lack the ability to self-reflect and understand why prompts are bad.
 *  Source: https://github.com/haizelabs/llama3-jailbreak/blob/master/trivial.py
 
-# Bypassing Meta's Llama Classifier: A Simple Jailbreak
-* 
-
 # Meta Llama3 Safety Protocols
 ## System Level Safeguards
 * _Llama Guard 3 8B_-flagship input/output moderation safeguard. Supports 8 language and optimized for specific tool calls like search and code interpreter.
@@ -38,4 +35,33 @@
 * _Llama Guard 3 1B_-lightweight input/output text moderation safeguard to be deployed on the edge. Also available in a mobile-optimized format. It acts as an LLM, generating output text to indicate the safety and potential content violations of a prompt or response (Source: https://github.com/meta-llama/PurpleLlama/blob/main/Llama-Guard3/11B-vision/MODEL_CARD.md). 
 * _Prompt Guard_-used to protect LLM powered applications from malicious prompts to ensure security and integrity. Categories of prompt attacks it protects against include prompt injections (inputs that exploit the inclusion of untrusted data from third parties into the context window of a model to get it to execute unintended instructions) and jailbreaks (malicious instructions designed to override a model's safety and security features.
 * Source: https://www.llama.com/trust-and-safety/
+
+# Bypassing Meta's Llama Classifier: A Simple Jailbreak
+* PromptGuard was audited by Robust Intelligence, and an exploit was found that could bypass the model's safety measures.
+* In the testing and development of these models, you need to include diverse examples of prompt injections, and you need to continuously validate said models.
+* During the fine-tuning process from the PromptGuard model, single characters of the alphabet were largely untouched. As a result, a jailbreak method that spaces out the imput prompt and removes punctuation could bypass the classifier's safety checks. Harmful content could evade detection when broken down into individual characters. This displays the importance of more comprehensive testing.
+## The Jailbreak Method
+```
+import re
+
+def jailbreak_meta_llama_Prompt_Guard_86M(prompt_injection):
+    return re.sub('[!\\"#$%&\\'()*+,-./:;<=>?@[\\\\]^_`{|}~]', '', ' '.join(prompt_injection))
+
+```
+## Significance of the Jailbreak
+1. _Simplicity_-the method is very straightforward, only requiring String manipulation
+2. _Ease of Discovery_-the exploit was found just by exploring how the model changed post-fine-tuning
+3. _Robustness_-unlike many exploits that must be carefully crafted, this one is easily transferrable and repeated.
+## Evaluations
+* Prior to the injection, PromptGuard correctly identified 450 prompts as injections or jailbreaks, but after the "spacing out into separate characters" technique was implemented, 449 out of 450 malicious prompts were mischaracterized as benign, the bypass had a success rate of 99.8%.
+## Other Technical Analysis
+* Task-specific vocabulary, like "passage" and "news" showed high differences, so the model may have emphasis on certain content areas.
+* Security-related terms and potential triggers also resulted in significant changes
+* Special characters,emojis, and unicode symbols showed minimal changes, so the main focus of the model seems to be on semantic content
+* Single character tokens didn't vary significantly
+* LLMs can understand spaced-out prompts, so this could be exploited.
+* Meta was informed of the issue and released a preprocessor for inputs to the model as a response (https://github.com/meta-llama/llama-models/issues/50)
+* Source: https://www.robustintelligence.com/blog-posts/bypassing-metas-llama-classifier-a-simple-jailbreak
+
+# 
 
