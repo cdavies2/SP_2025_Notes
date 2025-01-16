@@ -53,4 +53,57 @@ tar -xvzf nepenthes-1.0.tar.gz
 su -l -u nepenthes /home/nepenthes/nepenthes /home/nepenthes/config.yml
 ```
 ## Bootstrapping the Markov Babbler
-* The Markov feature requires a trained corpus. Ideally, all tarpits should look different (in order to avoid them being detected).
+* The Markov feature requires a trained corpus. Ideally, all tarpits should look different (in order to avoid them being detected). Text can be sourced from many different places (research corpuses, Wikipedia articles).
+* Training is performed by sending data to a POST endpoint. It only has to be done once, but doing this repeatedly allows you to mix texts and train in chunks.
+* Once you have your corpus text, known as corpus.txt, in the working directory and running in the default port looks like this...
+```
+curl -XPOST -d ./@corpus.txt -H'Content-type: text/plain' http://localhost:8893/train
+```
+* The above process will likely take hours. The module returns an empty string without a corpus.
+
+## Statistics
+* There are several statistics endpoints, all of which return JSON. To see everything...
+  * http://{http_host:http_port}/stats
+* To just see agent strings
+  * http://{http_host:http_port}/stats/agents
+* To just see IP addresses
+  * http://{http_host:http_port}/stats/ips/
+* To filter both agents and ips, simple add a hit count to the URL. For instance, to see a list of IPs that have been visited more than 100 times...
+  *  http://{http_host:http_port}/stats/ips/100
+
+## Nepenthes Used Defensively
+* A link to a Nepenthes location from a site will flood out valid URLs within the site's domain name, making it unlikely the crawler will access real content.
+* The aggregated statistics will provide a list of IP addresses that are almost certainly crawlers and not real users. Said list could be used to block those IPs from reaching your content.
+* Integration with fail2ban or blocklistd could allow realtime reactions to crawlers (this is not implemented yet).
+* Using Nepenthes defensively, you should turn off the Markov module and set max_delay and min_delay to something large, as a way to conserve your CPU.
+
+## Nepenthes Used Offensively
+* Rather than blocking crawlers with IP stats, put delay times as low as you wish.
+
+## Directives in the Configuration File
+* http_host-sets the host that Nepenthes will listen on (localhost is default)
+* http_port-sets the listening port number (default 8893)
+* prefix-prefix all generated links should be given. Can be overriden with the X-Prefix HTTP header, defaults to nothing.
+* detach-if true, Nepenthes will fork into the background and redirect logging output to Syslog
+* pidfile-path to drop a pid file after daemonization. If empty, no pid file is created
+* max_wait-longest amount of delay to add to every request. Increase to slow down crawlers, too slow they might not come back.
+* min_wait-the smallest amount of delay to add to every request. A random number between max and min_wait is chosen
+* real_ip_header-changes the name of the X-Forwarded-For hader that communicates the actual client IP address for statistics gathering
+* prefix-header-changes the name of the X-Prefix header that overrides the prefix configuration variable.
+* forget_time-length of time, in seconds, that a given user-agent can go mising before being deleted from the statistics table.
+* forget_hits-a user agent that generates more than this number of requests will not be deleted from the statistics table.
+* persist_stats-a path to write a JSON file to, which allows statistics to survive across crashes and restarts
+* seed_file-specifies the location of persistent unique instance identifiers. This allows two instances with the same corpus to have different-looking tarpits.
+* words-path to a dictionary file, usually '/usr/share/dict/words' but could vary depending on your OS
+* markov-path to a SQLite database containing a Markov corpus. If not specified, the Markov feature is disabld
+* markov_min-minimum number of words to babble on a page
+* markov_max-maximum number of words to babble (large numbers can cause heightened CPU load).
+* Source: https://zadzmo.org/code/nepenthes/
+
+# Nepenthes Reactions
+* One observed vulnerability with the ChatGPT crawler was that a single HTTP Request to ChatGPT API can trigger 5000 HTTP requests from the crawler to a website. If the ChatGPT crawler interacts with the tarpit multiple times per second, it is possible the tarpit could crash before the crawler.
+* A common trait among "bad" or malicious bots is ignoring robots.txt
+* Source: https://zadzmo.org/code/nepenthes/
+
+# robots.txt
+* robots.txt refers to the filename for implementing the Robots Exclusion Protocol, a standard meant to indicate to web crawlers and other bots which parts of a site that they are allowed to visit.
