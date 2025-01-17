@@ -139,5 +139,61 @@
 3. Unintended disclosure of confidential information due to LLM misinterpretation, lack of data scrubbing methods or errors.
 
 ## How to Prevent
-1.
+1. Integrate proper data sanitization techniques to keep user data from becoming part of the training data
+2. Input validation should be used to filter out possible malicious inputs, and thus prevent the model from being poisoned.
+3. When enriching the model with data and fine tuning it, apply the rule of least pribilege and don't train the model on information that the highest-privileged user can acces which may be displayed to a lower-privileged user, limit access to external data sources, and apply strict access control methods to external data sources.
+
+## Example Attack Scenarios
+1. Legitimate users are accidentally exposed to another LLM user's data
+2. User A creates prompts to bypass input filters and sanitization to get the LLM to reveal other users' PII (Personally Identifiable Information)
+3. PII is leaked into the model training data due to user mistakes or the LLM itself, increasing the possibility of said info getting revealed.
+
+# 7) Insecure Plugin Design
+* LLM plugins are called automatically by the model, driven by it, and implement free-text inputs from the model without validation or type checking.
+* Inadequate access control allows a plugin to automatically trust other plugins and assume the end user provided the inputs, allowing malicious inputs to run, and data exfiltration and remote code execution to occur.
+
+## Common Examples of Vulnerability
+1. A plugin accepts all parameters in a single text field instead of specific input parameters
+2. A plugin accepts configuration strings that can override entire configuration settings
+3. A plugin accepts raw SQL or programming statements
+4. Authentication is performed without explicit authorization to a particular plugin
+5. A plugin treats all LLM content as being created entirely by the user and performs any requested actions without requiring additional authorization.
+
+## How to Prevent
+1. Plugins should enforce strict parameterized input wherever possible and include type and range checks on inputs, and when this isn't possible,input should be sanitized, validated, and carefully inspected.
+2. Plugins should be inspected and tested thoroughly to ensure adequate validation with Static Application Security Testing (SAST) scans and Dynamic and Interactive Application Testing (DAST, IAST) during development.
+3. Plugins should follow least-privilege access control, exposing as little functionality as possible while still performing their function
+4. Plugins should use appropriate authentication identities (like OAuth2) to apply effective authorization and access control, and API keys should be used to provide context for custom authorization decisions.
+5. Require manual user authorization and confirmation of any action taken by sensitive plugins
+
+## Example Attack Scenarios
+1. A plugin accepts a base URL and instructs the LLM to combine the URL with a query to obtain weather forecasts. A malicious user can make the URL point to their own dmain, thus allowing them to inject their own content into the LLM system.
+2. A plugin accepts free-form input into a single field it does not validate, and an attacker supplies carefully crafted payloads to perform reconnaissance from error messages, and then exploits third-party vulnerabilities to execute code.
+3. A plugin that retrieves embeddings from a vector store accepts configuration parameters as a connection string without any validation, allowing the attacker to experiment and access other vector stores by changing names or host parameters and exfiltrate embeddings they should not have access to.
+4. A plugin accepts SQL WHERE clauses as advanced filter, which are appended to the filtering SQL, allowing the attacker to stage a SQL attack.
+5. An attacker uses indirect prompt injection to exploit an insecure code management plugin without input validation and weak access control to gain repository ownership and lock the user out of their repositories.
+
+# 8) Excessive Agency
+* An LLM is able to interface with other systems and undertake actions in response to a prompt. The decision over which functions to invoke could also be delegated to an LLM agent to dynamically determine based on input prompt or LLM output.
+* Excessive Agency is usualy the result of excessive functionality, permissions,or autonomy. It enables damaging actions to occur in response to an LLM's unexpected outputs.
+
+## Common Examples of Vulnerability
+1. Excessive Functionality: an agent has access to plugins that have functions that aren't needed for the intended operation of the system (EX: model is supposed to read documents from a repository, plugin allows it to modify and delete them).
+2. Excessive Functionality: a plugin with open-ended functionality fails to properly filter the input instructions for commands outside of necessary ones (EX: a plugin to run one specific shell command fails to properly prevent other command execution)
+3. Excessive Permissions: a plugin has perissions on other systems that are unnecessary (EX: a plugin intended to read data from a server has SELECT permissions, but also UPDATE and DELETE)
+4. Excessive Permissions: plugin has access to privileges that a typical user shouldn't
+5. Execssive Autonomy: an LLM-based application or plugin cannot independently verify and approve high-impact actions (EX: a plugin to delete documents starts deleting them without confirmation from the user)
+
+## How to Prevent
+1. Limit the plugins/tools that LLM agents can call to the minimum functions needed
+2. Limit functions implemented in the tool to be minimum necessary (EX: plugin to read and summarize emails cannot send them too)
+3. Avoid open-ended functions where possible (build a file-writing plugin for just that rather than generically running shell commands)
+4. Limit the permissions that LLM plugins/tools are granted to other systems the minimum necessary to limit scope of undesirable acions (EX: LLM agent that makes product recommendations can only read the products table, it cannot read others or change the records). This should be enforced by applying appropriate database permissions for the identity that the LLM plugin uses to connect to the database.
+5. Track user authorization and security scope to make sure actions are executed on downstream systems in the context of the specific user, with minimum needed privileges
+6. Utilize human-in-the-loop control to ensure a human approves all actions before they're taken (EX: an app that creates social media content for a user includes an approval routine that actually makes the posts)
+7. Implement authorization in downstream systems rather than relying on an LLM to devide if an action is allowed or not.
+8. To limit damage, log and monitor activity of LLM plugins/tools and downstream systems to identify where undesirable actions are occurring and respond accordingly and implement rate-limiting to reduce the possible undesirable actions in a period.
+
+ # 9) Overreliance
+ * 
 * Source: https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-2023-v1_0.pdf
