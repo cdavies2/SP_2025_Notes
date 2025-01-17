@@ -65,4 +65,45 @@
 * CVE-2024-5184
 * Source: https://cwe.mitre.org/data/definitions/74.html
 
+# CWE-669: Incorrect Resource Transfer Between Spheres
+* The product does not properly transfer a resource/behavior to another sphere, or improperly imports a resource/behavior from another sphere, resulting in unintentional control over said resource.
+* A "control sphere" is a set of resources and behaviors that are accessible to a single actor, or a group of actors. A product's security model typically defines multiple spheres, possibly implicitly. For instance, there might be a sphere for "administrators" that can create new user accounts with subdirectories under /home/server/, and a second might cover the set of users that can create or delete files within their own subdirectories. Each sphere has its own actors and privileges.
 
+## Common Consequences
+* Confidentiality/Integrity-application data can be read and modified
+
+## Code Examples
+* If code does not perform a check on the type of the file being uploaded, an attacker could upload any executable file, thus running malicious cold. Also, because the filename isn't checked, an attacker could use "../" sequences to write files outside their intended directory.
+* If you're running a program that has an external script (like connecting to a database with credentials), but code doesn't verify that the external domain accessed is the intended one, an attacker could cause the external domain name to resolve to an attack server, thus gaining the ability to steal usernames and encrypted passwords from future users trying to log in.
+
+## CVE Example
+* CVE-2024-29018 (External DNS Requests from "Internal" Networks using Moby)
+* Source: https://cwe.mitre.org/data/definitions/669.html
+
+# CWE-76: Improper Neutralization of Equivalent Special Elements
+* A product might have a fixed list of special characters that it neutralizes, but there may be alternate encodings or representations of those characters that also haave the same meaning. For instance, a product could filter out a leading slash (/) to prevent absolute path names, but it does not account for a tilde (~) followed by a user name, which on some *nix systems could be expanded to an absolute pathname. Alternatively, it could filter out a dangerous "-e" command-line switch when calling external programs, but it might not account for "--exec" or other switches with the same semantics.
+* This weakness is primary, meaning it exists independently of other weaknesses
+
+## Potential Mitigation
+* During the requirements phase, choose programming languages and support that are not as vulnerable to these issues.
+* During the implementation phase, utilize allowlist and denylist parsing to filter equivalent special element syntax from all input.
+
+## CVE Example
+* CVE-2024-34359 (Llama-Cpp-Python Remote Code Execution via Template Injection)
+* Source: https://cwe.mitre.org/data/definitions/76.html
+
+# CWE-918: Server-Side Request Forgery (SSRF)
+* This occurs when a web server receives a URL or similar request from an upstream componenet and retrieves the contents of said URL, but it does not effectively determine whether the request is being sent to the expected or appropriate desitnation.
+* Another term for this is XSPA (Cross Site Port Attack).
+
+## Common Consequences
+* Confidentiality-application data is read
+* Integrity-unauthorized code or commands are executed
+* Access Control-by providing URLs to unexpected hosts or ports, attackers can make it appear that the server is sending a request, resulting in the bypassing of access controls likes firewalls (which are meant to prevent attackers from accessing URLs directly). The server can then be used as a proxy to conduct port scanning of hosts in internal networks, use other URLs that can access documents on the system (via file://) or use other protocols like gopher:// or tftp:// to gain greater control over the contents of requests.
+
+## Detection Methods
+* Automated Static Analysis-also known as Static Application Security Testing (SAST) can find instances of this weakness by analyzing source code (or binary/compiled code) without needing to execute it. Typically, this is done by building a model of data flow and control flow, then searching for potentially-vulnerable patterns that connect "sources" (origins of input) with "sinks" (destinations where data interacts with external components, a lower layer like the OS).
+
+## CVE Example
+* CVE-2024-56800 (Firecrawl SSRF Vulnerability Via Malicious Scrape)
+* Source: https://cwe.mitre.org/data/definitions/918.html
