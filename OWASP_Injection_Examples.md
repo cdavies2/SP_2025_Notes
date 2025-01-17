@@ -194,6 +194,61 @@
 7. Implement authorization in downstream systems rather than relying on an LLM to devide if an action is allowed or not.
 8. To limit damage, log and monitor activity of LLM plugins/tools and downstream systems to identify where undesirable actions are occurring and respond accordingly and implement rate-limiting to reduce the possible undesirable actions in a period.
 
- # 9) Overreliance
- * 
+# 9) Overreliance
+ * Occurs when systems or people depend on LLMs for decision-making or content generation without proper oversight. LLMs hallucinations or confabulation result in misinformation, legal issues, and reputational damage.
+ * LLM-generated source code can introduce unnoticed security vulnerabilities
+
+## Common Examples of Vulnerability
+1. LLM provides inaccurate information in responses
+2. LLM produces nonsensical text that is grammatically correct but doesn't make sense
+3. LLM melds information from varied sources, creating misleading content
+4. LLM suggests insecure/faulty code, leading to vulnerabilities when incorporated
+5. Failure of provider to appropriately communicate the inherent risks to end users, leading to potential harmul consequences
+
+## How to Prevent
+1. Regulaly monitor and review LLM outputs (maybe compare several model responses for the same prompt)
+2. Cross-check the LLM output with trusted external sources. This additional layer of validation can help ensure information provided is accurate and reliable.
+3. Enhance the model with fine-tuning or embeddings to improve output quality. Techniques like prompt engineering, parametr efficient tuning (PET), full model tuning, and chain of though prompting can be employed for this purpose.
+4. Implement automatic validation mechanisms that can cross-verify the generated output against known facts or data
+5. Break down complex tasks into manageable subtasks and assign them to different agents, reducing chances of hallucinations
+6. Communicate the limitations of LLMS (like potential inaccuracies)
+7. Build APIs and user interfaces that encourage responsible and safe LLM use (content filters, user warnings, clear labeling of AI-generated content)
+8. When using LLMs in development environments, establish secure coding practices and guidelines to prevent integration of possible vulnerabilities.
+
+## Example Attack Scenario
+1. A news organization generates articles with an AI model, and a malicious actor feeds the AI misleading information. The model also unintentionally plagiarizes, leading to copyright issues and mistrust.
+2. Overreliance on the AI's suggestion in software development introduces security vulnerabilities into the application due to insecure default settings or recommendations inconsistent with secure coding practices.
+3. A software development firm uses an LLM to assist developers. The LLM suggests a non-existent code library or packahe, and a developer, trusting the AI, unknowingly integrates a malicious package into the firm's software.
+
+# 10) Model Theft
+* This arises when proprietary LLM (being valuable intellectual property) are compromised, physically stolen, copied, or weights and parameters are extracted to create a functional equivalent. The impact of LLM model theft can include economic and brand reputation loss, erosion of competitive advantage, unauthorized usage of the model or unauthorized access to sensitive information contained within the model.
+* The theft of LLMs represents a significant security concern as language models become increasingly powerful and prevalent. Organizations must implement robust security measures to protect their LLM models, including access controls, encryption, and continuous monitoring.
+
+## Common Examples of Vulnerability
+1. An attacker exploits a vulnerability in a company's infrastructure to gain unauthorized access to their LLM model repository
+2. An insider threat scenario where a disgruntled employee leaks model or related artifacts
+3. An attacker queries the model API using carefully crafted inputs and prompt injection techniques to collect a sufficient number of outputs to create a shadow model
+4. A malicious attacker is able to bypass input filtering to perform a side-channel attack and harvest model weights and architecture information to a remote controlled resource
+5. The attack vector for model extraction involves querying the LLM with a large number of prompts on a particular topic. The outputs can then be used to fine-tune another model (this requires that the attacker generate a large number of targeted prompts, the outputs not contain hallucinated answers, and still won't create a 100% identical model).
+6. The attack vector for functional model replication involves using the target model via prompts to generate synthetic training data (self-instructing) to fine-tune another foundational model to produce a functional equivalent.
+7. A stolen/shadow model can stage adversarial attacks including unauthorized access to sensitive information contained within the model or experiement undetected with adversarial inputs to further stage advanced prompt injections.
+
+## How to Prevent
+1. Implement strong access controls and authentication mechanisms to limit unauthorized access to LLM model repositories and training environments. Supplier management tracking, verification and dependency vulnerabilities are important to prevent supply-chain attacks.
+2. Restrict the LLM's access to network resources, internal services, and APIs
+3. Regularly monitor and audit access logs and activities related to LLM model repositories to detect and respond to any suspicious or unauthorized behavior quickly
+4. Automate MLOps deployment with governance and tracking and approval workflows to tigheten access and deployment controls within the infrastructure
+5. Implement controls and mitigation strategies to mitigate and/or reduce risk of prompt injection techniques causing side-channel attacks
+6. Rate limiting of API calls where applicable and/or filters to reduce risk of data exfiltration from the LLM applications, or implement techniques to detect extraction activity from other monitoring systems.
+7. Implement adversarial robustness training to help detect extraction queries and tighten physical security measures
+8. Implement a watermarking framework into the embedding and detection stages of an LLMs lifecycle.
+
+## Example Attack Scenario
+1. An attacker exploits a vulnerability in a company's infrastructure to gain unauthorized access to their LLM model repository. The attacker then exfiltrates valuable LLM models and uses them to launch a competitng service or extract sensitive information, harming the original company.
+2. A disgruntled employee leaks model or related artifacts
+3. An attacker queries the API with carefully selected inputs and collects sufficient number of outputs to create a shadow model.
+4. A security control failure is present within the supply-chain and leads to data leaks of proprietary model information
+5. A malicious attacker bypasses input filtering techniques and preambles of the LLM to perform a side-channel attack and retrieve model information to a remote controlled resource under their control.
+  
 * Source: https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-2023-v1_0.pdf
+* 
