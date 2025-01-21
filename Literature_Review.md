@@ -94,4 +94,23 @@
 
 * Overall, Journal of Cybersecurity and Privacy seems to put great emphasis on the research that goes into each article, both articles state in the beginning how they found their sources and how they were narrowed down.
 
-#
+# Journal of Computer Security
+## Deep Learning Algorithms for Cyber Security Applications: A Survey
+* Link: https://journals.sagepub.com/doi/full/10.3233/JCS-200095
+* The paper reviews cyber security aspects associated with deep learning in three different areas (system internal malware detection, system external intrusion detection, IoT device privacy leakage), and compares deep learning malware and intrusion detection and privacy leak resolution methods with traditional ones.
+### Features of Traditional Machine Learning Algorithms
+* Linear regression is simple, easy to interpret, and over-fitting can be avoided by regularization. However, it is not fit for identifying complex patterns
+* Decision Trees show nonlinear relationships and are very robust to outliers, but they are easy to overfit
+* Logistic regression has easily-interpreted output and overfitting can be remedied, but it doesn't perform well when there are multiple or nonlinear decision boundaries.
+* Support vector functions can model nonlinear boundaries and aren't easily overfit, but they are very memory intensive and outperformed by random forests.
+* Random forests are very adaptable to data sets, but require a lot of time for training and given noisy samples, are prone to overfitting.
+* Traditional machine learning methods generate many false alarms and fail to detect some types of attacks, like Remote to Local (R2L) and User to Root (U2R)
+### Deep Learning Algorithms
+* As opposed to traditional machine learning, deep learning can automate feature engineering, and adapts well to different fields and applications. However, they require much more data for training, and can be regarded as a feature learner (feature engineering is often needed for complicated cyber security issues).
+
+## Advances in spam detection for email spam, web spam, social network spam, and review spam: ML-based and nature-inspired-based techniques
+* Link: https://journals.sagepub.com/doi/full/10.3233/JCS-210022
+* Machine-learning based solutions to spam detection are very effective, but they often have a computational complexity problem, meaning complexity increases as dataset size increases. Nature Inspired (NI) based data reduction techniques reduce the computational complexity of ML algorithms, making them faster and more effective for real-time spam detection.
+* In effective spam detection, NI algorihms are used to select optimal features, instances, and parameters for improving training speed and predictive accuracy of ML algorithms, and select effective classification rules for spam classifiers.
+
+* All reports observed so far have had a section in the introduction comparing themselves to existing reports and stating what they are doing differently
