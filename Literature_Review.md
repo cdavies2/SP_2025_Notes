@@ -54,7 +54,23 @@
 7. _Reject on Negative Impact (RONI)_: computationally expensive, not suited for deep learning/large datasets, possible malicious data points are relabeled based on the labels of neighboring samples in the training dataset.
 
 ### Model Poisoning
-* Closer to traditional cyberattacks, 
+* Closer to traditional cyberattacks, a model is breached and compromised. A model is trained and returned with secret backdoor inputs. In a targeted attack, the advesary switches the label of outputs for specific inputs, while in an untargeted attack, the input of the backdoored property remains misclassified to degrade model accuracy. To mitigate this, backdoors can be identified by retraining or fine-tuning them.
+
+### Transfer Learning Attack
+* Transfer learning moves the knowledge of an already-trained model to the target model. If someone downloads a corrupted model, the one they train with it will be corrupted too. A mitigation strategy is network pruning, which removes connectives in a model, generated a sparse, fine-tuned version.
+
+### Attack on Federated Learning
+* In federated learning, each device has its own model to train. Common attack methods include explicit boosting and alternating minimization. Defense mechanisms are robust aggregation and robust learning rate.
+
+### Model Inversion Attack
+* The training data is reconstructed given the model parameters. This is a privacy concern, due to the increased prominence of online repositories. Some defense strategies include Dropout and Model Staking, MemGuard, and Differential Privacy.
+
+### Model Extraction Attack
+* Occurs when an attacker obtains blackbox access to the target model and is successful in learning another model that closely resembles (or is even the same as) the target model. To defend against this, hiding or adding noises to output probabilities (this might not work for label-based attacks) or analyzing input distribution to distinguish suspicious queries may be useful
+
+### Inference Attack
+* Machine learning models sometimes leak information about the data they were trained on. A membership inference attack is when somebody can determine if data is part of a model's training set given blackbox access to the model. Attribute inference attacks are where attackers get access to a set of data about a target user (which is mostly public) and aims to infer private information based on that (they train a model to take public data as input and predict the user's private attribute values)
+
 ## Applications of Machine Learning in Cyber Security: A Review
 * Link: https://www.mdpi.com/2624-800X/4/4/45
 * This paper is structured similarly to a narrative literature review, going over studies evaluating how well AI can address cybersecurity challenges
@@ -66,7 +82,7 @@
   4. Be labeled
   5. Comply with ethical AI principles and privacy protocols
   6. Be accepted by the scientific community
-## Ethical AI and Compliance Aspects
+### Ethical AI and Compliance Aspects
 * Ethical AI principles are very important regarding how machine learning (ML) models are developed and applied in a cyber security context. Said principles include....
   1. _Transparency_: being clear about a model's decision making process is integral in capturing why it gives specific predictions
   2. _Fairness and bias mitigation_: fairness is ensured when AI models (especially those involved in threat detection) do not discriminate against any group of malicious activities or any potentially relevant data source from which threats could arise. Bias can be addressed by utlizing more balanced datasets, allowing the system to recognize a large and diverse set of threats.
