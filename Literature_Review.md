@@ -175,3 +175,9 @@
 * The pilot implementation of the above method found it to perform efficiently. In the future, functionality for storing statistical data of service users to train the model could be created.
 
 * Unlike the previous, this article didn't directly compare itself to its sources to say why what it was studying was unique and necessary, but rather pointed to real-world examples of similar concepts, and described something they were missing that this model did contain.
+
+# ACM Transactions on Privacy and Security
+## Beyond Gradients: Exploiting Adversarial Priors in Model Inversion Attacks
+* Link: https://dl.acm.org/doi/10.1145/3592800
+* Collaborative machine learning allows models to train on geographically distributed datasets, and it can involve direct dating sharing or transfer learning on publicly available data, meaning institutions can share data and train models to generalize more effectively. However, this can be difficult, as data protection protocols can forbid collaborators from sharing data between each other.
+* Federated learning allows distributed model training without exchanging data itself, models are instead trained locally and only updates are shared with the rest of the federation of data owners. This approach, however, can be exploited, as information can be reverse-engineered, meaning adversaries can recover the original data behind the captured updated, disclosing sensitive data.
