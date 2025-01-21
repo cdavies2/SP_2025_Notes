@@ -127,4 +127,51 @@
 # IEEE Transactions on Information Forensics and Security (TIFS)
 ## Model for Describing Processes of AI Systems Vulnerabilities Collection and Analysis using Big Data Tools
 * Link: https://ieeexplore.ieee.org/document/10018811
-* 
+* Assessing cyber security of AI systems is a multi-step process, both examining existing methods and tools of information collection and processing, and developing models and algorithms to collect and analyze data on vulnerabilities of AI systems for presentation in a convenient form.
+
+### Analysis of existing methods and tools of collecting information about the vulnerability of AI Systems
+* There is currently no method to completely assess the state of protection og AI systems against cyber criminals, as individual organizations that apply AI systems decide this issue on their own.
+* MITRE Corporation developed the ATLAS (Adversarial Threat Landscape for Artificial- Intelligence Systems) knowledge base for adversary tactics, techniques, and case studies for machine learning systems.
+* Open data sources like arXiv and MDPI have lots of disparate information about AI and ML systems, their classification, vulnerabilities, and methods of dealing with them. Combining that information with data from the AI incident database, a statistical risk level can be estimated for an initial risk assessment of the direction of application of a certain AI system.
+* The National Vulnerability Database is the most popular repository, storing vulnerabilities with their own CVE (common vulnerability risk identifier), but AI systems have to be separated into components to effectively search this database for them. The threat assessment study in machine lerning is more of a roadmap, as it lacks details about AI systems as services.
+* Works on modeling and threat analysis for AI systems suggest application of STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege) to assess the security of systems. DREAD (Damage Potential, Reproducibility, Exploitability, Affected Users, Discoverability) is used to assess severity of threats.
+* The focus of this work is assessing security of AI systems over their lifecycle, but use of these systems as services and security metrics of the case aren't addressed.
+* It can be concluded there are no perfect conceptual models and methods for gathering vulnerability information to assess cybersecurity of AI systems, meaning said systems can be designed, developed, and used without thorough analysis/assurance.
+
+### Approach
+* This approach is based on systematic collection, processing, normalization, and combination of disparate information from various data repositories (with numerous sources and topics) to obtain relevant information about AI system vulnerabilities. This was done by....
+  * Collecting information from scientific information sources for specific search queries tied to the direction of AI and cyber defenses
+  * Based on ATLAS, code repositories, AI system components and the vulnerability database, identify AI vulnerabilities
+  * Completeness of references about vulnerabilities (CRV), which is the ratio of the number of weighted sources or groups of sources taken into account to their total number.
+  * Trustworthiness of information about vulnerabilites (TIV), which can be estimated by probabilities of absence of errors caused by incorrect information about vulnerabilities (their real presence or absence for corresponding components, severity, publication time, etc).
+  *  Analysis tools like Apache Spark, and Python with NumPy, Pandas, SciPy, Matplotlib, and Scikit-learn.
+
+### Model A0
+* Input data was information from data storages, information about the object of the AI system with the environment, countermeasures and criteria for their selection, and measurable metrics.
+* Output data was up-to-date, systematic information about vulnerabilities of AI systems.
+* Mechanisms were Python with Data Science and ML libraries, software parses, program parsers, and manual analysis
+* Controls were structure and rules of data storages, quality indicators of vulnerability information, data collection and analysis algorithms, structure of the AI system object, and position of the IMECA method.
+
+### Model A1
+* Breaks the previous model into three procedures...
+  1. Data storages analysis, conducted to obtain information about the vulnerabilities of AI systems
+  2. Combining the data stores with the object of the system, namely the selection and presentation vulnerability information of the AI system under study according to a certain format.
+  3. Vulnerability assessment of AI systems using various techniques (like IMECA).
+ 
+### Model A2
+* Details the process of data storages analysis, which has these steps....
+  1. Collect data from the storages and evaluate by CRV metrics
+  2. Normalize data by groups according to a certain format
+  3. Filter out invalid data
+  4. Combine data and evaluate CVS, TIV indicators
+  5. Turn data into final, defined format
+* Assessing the vulnerabilities of the AI system has these steps....
+  1. Determine the level of criticality of AI system vulnerabilities
+  2. Determine criteria for selecting countermeasures
+  3. Select countermeasures according to a certain criteria and assess the final level of criticality and security risks of the AI system.
+
+### Case Study
+* The NLP as a Service system provides text autocompletion, and its main components were GPT-2, PyTorch,and Transformers Library. To demonstrate how the system works, a back end part based on the Python Django framework was developed to process client requests, compute an autocomplete text and return a response.
+* The pilot implementation of the above method found it to perform efficiently. In the future, functionality for storing statistical data of service users to train the model could be created.
+
+* Unlike the previous, this article didn't directly compare itself to its sources to say why what it was studying was unique and necessary, but rather pointed to real-world examples of similar concepts, and described something they were missing that this model did contain.
