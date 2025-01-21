@@ -45,7 +45,16 @@
   * _High sensitive_: poison points are surrounded by other points, so its location is seen as benign
   * _Low sensitive_: anamoly detector drops all points away from the centroid by a certain distance, so whether or not a point is deemed abnormal does not vary much by addition or deletion of points. Attackers then optimize the location of poisoned points so it satisfies the defender's constraints.
 ### Poisoning Defense Mechanisms
+1. _Adversarial Training_: inject instances created by an adversary in order to increase the strength of the model.
+2. _Feature Squeezing_: reduces the number of features a model has, thus reducing both the complexity and sensitivity of the data.
+3. _Transferability blocking_: introduces null labels into the training data and instructing the model to discard adversarial samples as null labeled data
+4. _MagNet_: uses detector (measures distance between normal and poisoned data and a threshold) and reformer (autoencoder makes a tampered instance into a legitimate one)
+5. _Defense-GAN_: General Adversarail Network uses a generator to reconstruct images, so genuine instances are closer to the generator than tainted ones
+6. _Local Intrinsic Dimensionality_:
+7. _Reject on Negative Impact (RONI)_: computationally expensive, not suited for deep learning/large datasets, possible malicious data points are relabeled based on the labels of neighboring samples in the training dataset.
 
+### Model Poisoning
+* Closer to traditional cyberattacks, 
 ## Applications of Machine Learning in Cyber Security: A Review
 * Link: https://www.mdpi.com/2624-800X/4/4/45
 * This paper is structured similarly to a narrative literature review, going over studies evaluating how well AI can address cybersecurity challenges
@@ -68,4 +77,5 @@
   7. _Compliance_: frameworks like GDPR and NIST's AI risk management ensures legal usage and applications of ethical AI.
 
 * Overall, Journal of Cybersecurity and Privacy seems to put great emphasis on the research that goes into each article, both articles state in the beginning how they found their sources and how they were narrowed down.
+
 #
