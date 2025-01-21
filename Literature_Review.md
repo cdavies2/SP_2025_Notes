@@ -112,5 +112,19 @@
 * Link: https://journals.sagepub.com/doi/full/10.3233/JCS-210022
 * Machine-learning based solutions to spam detection are very effective, but they often have a computational complexity problem, meaning complexity increases as dataset size increases. Nature Inspired (NI) based data reduction techniques reduce the computational complexity of ML algorithms, making them faster and more effective for real-time spam detection.
 * In effective spam detection, NI algorihms are used to select optimal features, instances, and parameters for improving training speed and predictive accuracy of ML algorithms, and select effective classification rules for spam classifiers.
+### Machine learning techniques for review spam detection
+* Natural Langauge Processing (NLP) allows machine learning algoirthms to detect fake reviews. The bag of words approach is often used, where the presence of individual words or groups of words are distinguishing reatures. This alone is not enough, so it is often combined witho other features, like lexical, unigram, and bigram.
+* Existing supervised ML methods are trained on features specific to certain domains. When performing cross-domain classification, general features like LIWC output and POS tag frequencies perform better than unigram features for cross-domain classification, but unigram features work the best for intra-domain classification. As such, generic models need specific features to detect spam in multiple domains.
+### Conventional machine learning techniques for social spam detection
+* Because of spam drift (spam patterns change over time, impacting the performance of existing ML-based classifiers), ML algorithms cannot efficiently identify spam activities in real-life settings. One study trained a deep learning algorithm with tweets and built a CNN-based classification model for identifying Twitter spam. The results showed that deep-learning performs better than text-based spam filtering.
+### Machine learning techniques for web spam detection
+* Web spam results in undesirable web pages being shown to users and causes search engines to waste storage and resources.
+* Graph-based approaches to spam look at web graph or hyperlinks of web pages, content-based approaches look at the contents of web documents, and cloaking-based approaches are designed to identify cloaking spam (content submitted to the search engine is different from content displayed to the web user through the browser).
+* Random forest was the best performer among traditional machine learning algorithms for identifying spam.
 
 * All reports observed so far have had a section in the introduction comparing themselves to existing reports and stating what they are doing differently
+
+# IEEE Transactions on Information Forensics and Security (TIFS)
+## Model for Describing Processes of AI Systems Vulnerabilities Collection and Analysis using Big Data Tools
+* Link: https://ieeexplore.ieee.org/document/10018811
+* 
