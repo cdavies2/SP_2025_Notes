@@ -2,7 +2,7 @@
 
 ## Injection Methods
 * Passive-rely on retrieval to deliver injections (EX: Bing Chat can be used to read a current page the user is reading and summarize it, ChatGPT Retrieval Plugin works similarly, and any prompts written on the page can poison the model)
-* Active-prompts could be directly delivered to the LLM (enails are sent that contain prompts that can be processed by automated spam detection or LLMs-augmented email clients).
+* Active-prompts could be directly delivered to the LLM (emails are sent that contain prompts that can be processed by automated spam detection or LLMs-augmented email clients).
 * User-Driven Injections-an attacker could inject a malicious prompt into a text snippet that a user copies from their site (and if the text is pasted into Chat-GPT, the malicious code is ran), or they could utilize social engineering to convince users to try strange and dangerous prompts (EX: "You won't believe ChatGPT's answer to this prompt!")
 * Hidden Injections-attackers often utilize multiple exploit stages, where an initial smaller injection instructs a model to fetch a larger payload from another source. Also, with multi-modal models (GPT-4), the prompts could be hidden in images, be encoded to circumvent filtering, or they could be the result of Python programs the model is instructed to run, thus making them harder to detect.
 
