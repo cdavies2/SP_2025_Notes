@@ -237,3 +237,11 @@
 * Tasks are meant to mimic different classes of guardrails, or software that is designed to make the LLM adhere to specific safety and security standards.
 * Getting a model to stray from the desired area or purpose of a conversation is a _topical_ failure, getting a model to produce inaccurate or inappropriate information is a _safety_ threat, and leaking personal information is a _security_ threat.
 
+## The Role of Machine Learning in Cybersecurity
+* Link: https://dl.acm.org/doi/full/10.1145/3545574#sec-5
+### General Problems of ML in Cybersecurity
+* Machine Learning follows the independent, identically distributed random variables (iid) principle, meaning that data analyzed during development of an ML model will be similar to the "future" data that the ML model will analyze post deployment. If the assumption is not met, the deployed ML model will exhibit different performance than expected. This inhibits ML use in cybersecurity, as it interferes with three characteristics of this domain....
+  1. _Concept Drift_: modern systems continously evolve (new services and users are added). This means that in the long term, training data will become obsolete. In cybersecurity and threat detection, the environment and adversaries constantly change.
+    * A new vulnerability could be discovered, so previously benign examples could be treated as malicious, attackers can devise novel strategies that cannot be detected by existing mechanisms (EX: zero-day exploits). The only practical remedy to concept drift is through constant update of ML systems with new data that reflects trends
+  2._Adversarial Setting_: while many attacks are "stationary", motivated adversaries constantly refine and develop offensive strategies. Adversarial samples involve applying "perturbations" to input data with the goal of compromising the predictions of ML models. Even imperceptible modifications can affect proficient cybersecurity ML detectors. These samples can affect the pre- and post-deployment phases of the ML, and no universal solution against adversarial samples has been found so far. The best defense is to be proactive, anticipate adversaries and evaluate/counter them before ML deployment
+  3.
