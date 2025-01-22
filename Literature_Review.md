@@ -130,7 +130,7 @@
 * Assessing cyber security of AI systems is a multi-step process, both examining existing methods and tools of information collection and processing, and developing models and algorithms to collect and analyze data on vulnerabilities of AI systems for presentation in a convenient form.
 
 ### Analysis of existing methods and tools of collecting information about the vulnerability of AI Systems
-* There is currently no method to completely assess the state of protection og AI systems against cyber criminals, as individual organizations that apply AI systems decide this issue on their own.
+* There is currently no method to completely assess the state of protection of AI systems against cyber criminals, as individual organizations that apply AI systems decide this issue on their own.
 * MITRE Corporation developed the ATLAS (Adversarial Threat Landscape for Artificial- Intelligence Systems) knowledge base for adversary tactics, techniques, and case studies for machine learning systems.
 * Open data sources like arXiv and MDPI have lots of disparate information about AI and ML systems, their classification, vulnerabilities, and methods of dealing with them. Combining that information with data from the AI incident database, a statistical risk level can be estimated for an initial risk assessment of the direction of application of a certain AI system.
 * The National Vulnerability Database is the most popular repository, storing vulnerabilities with their own CVE (common vulnerability risk identifier), but AI systems have to be separated into components to effectively search this database for them. The threat assessment study in machine lerning is more of a roadmap, as it lacks details about AI systems as services.
@@ -181,3 +181,59 @@
 * Link: https://dl.acm.org/doi/10.1145/3592800
 * Collaborative machine learning allows models to train on geographically distributed datasets, and it can involve direct dating sharing or transfer learning on publicly available data, meaning institutions can share data and train models to generalize more effectively. However, this can be difficult, as data protection protocols can forbid collaborators from sharing data between each other.
 * Federated learning allows distributed model training without exchanging data itself, models are instead trained locally and only updates are shared with the rest of the federation of data owners. This approach, however, can be exploited, as information can be reverse-engineered, meaning adversaries can recover the original data behind the captured updated, disclosing sensitive data.
+
+## LLM Security Guard for Code
+* Link: https://dl.acm.org/doi/pdf/10.1145/3661167.3661263
+* Many models that are widely used for code development have limited security provisions, so if a vulnerable code piece is recommended by the LLM as a secure solution and subsequently used, an entire system's security could be compromised.
+* LLMSecGuard is a framework specifically designed to examine the security properties of code-generating LLMs, applying static security analysis on the generated code to uncover possible security issues and guifes LLMs in resolving them.
+* LLMSecGuard can also assess security properties of LLMs and benchmark them across various CWEs, and is open-source and publicly available on GitHub.
+### Motivation
+* Security issues are present in many domains, from web servers to critical software systems. Program analysis tools for uncovering software tools are limited and not especially popular among developers (who also often blindly trust code generators).
+* An analysis of 489 open-source Java projects found that 85% of cryptography APIs aren't used properly, and existing security tools don't fulfill developer expectations.
+* In one instance, ChatGPT was prompted to create a secure encryption algorithm, with a secure Initialization Vector (IV) and no hard-coded secrets. The model provided code with a hard-coded password and hard-coded String for a salt. When asked about the salt, Chat-GPT responded that hard-coded salts were typically not recommended, as they should be unique for each user and randomly generated for each user, and provided new code to generate random salt. The model was then asked if there were any other security risks in the code, and it identified a key derivation function rather than a hash function to generate a password-based key, but it did not identify the hard-coded password until directly asked about it.
+* Therefore, it can be deduced that via proper interactions with ChatGPT, specifying possible security issues and where they are in the code, you could generate a secure code exampl using ChatGPT. However, inexperienced developers may lack the knowledge to do so, so frameworks that link the LLM to an analysis tool could be useful.
+### LLMSecGuard
+* Its primary objective is to enhance security of LLM-generated code and benchmark the security properties of LLMs. It is implemented in Python using Django and Flask and uses SQLite for data persistence. The components include....
+  * _Prompt Agent_: responsible for receiving a prompt and providing other components with the code model's response. After receiving a prompt, the agent responds by reformulating it, passing it to code models, collecting the response, and forwarding the result to other components.
+  * _Security Agent_: passes code to static code analysis engines (Semgrep and Weggli) and collects potential security vulnerabilities
+  * _Benchmark Agent_: puts different LLMs to security test. Particularly, it evaluates the security properties of LLMs based on a set of challenges structured in JSON format. Each challenge has a prompt and expected outcome, and the agent flags LLMs that pass the challenge.
+### Usage Scenarios
+* Setup:
+  * LLMSecGuard requires at least one LLM and one code analysis engine to operate effectively, which can be set up by providing the API information (endpoint and key) associated with each entity. Currently, the Guard has been instantiated with Llama2 (outdated) and Weggli and Semgrep static code security analysis tools
+  * LLMSecGuard relies on CyberSecEval (designed to evaluate cybersecurity aspects of LLM coding assistants), which contains many test cases to assess insecure code. Its benchmarks can be modified based on the users' preferences.
+  * The "termination condition" parameter determines how frequently the benchmark process is executed
+* Security Benchmarking:
+  * A set of existing prompts, referred to as benchmark prompts, undergo evaluation. The "Benchmark Agent" sends each prompt in the benchmark to the "Prompt Agent", which dispatches the prompt to every LLM considered for benchmarking, collects responses for each prompt, and forwards them to the benchmark agent. In terms of vulnerable code, the quantity and severity of possible CWEs is assessed. Each LLM is assigned a performance score for the challenge, and the LLMs are ranked.
+* Secure Code Generation:
+  * First, the user provides a prompt, the "Prompt Agent" forwards it to the top LLM determined in the benchmarking scenario (unless the user selects a different one), the component then transfers produced code to a "Security Agent" for inspection, and said agent collaborates with external analysis engines to uncover vulnerabilities in the code. If the termination condition is met (there's no vulnerability or the maximum analysis iterations is reached). When the termination condition isn't met, this information is relayed to the "Prompt Agent", which formulates a new prompt based on collected vulnerability information and queries the LLM once again.  
+### Related Work
+*  Across 89 scenarios, 40% of the code generated by Copilot contained vulnerabilities. In a later study, it was found that in 25% of cases, Copilot even produced fixes for vulnerabilities, suggesting a lower susceptibility to security risks compared to human programmers.
+*  A later study examining 435 code sinppers generatd by Copilot found 35% exhibit CWEs
+*  Chat-GPT had a misuse rate of 70% in executing programming tasks for Java security APIs.
+### Future Work
+* Two groups of developers, both utilizing LLMs for coding, will be recruited for a study, one working on programming tasks freely and the other exclusively using LLMSecGuard, and time taken along with number of severity of vulnerabilities will be assessed.
+* If evaluations are positive, integrating the guard into a popular IDE could be useful. Future work could also examine code changes in each iteration between "Prompt Agent" and "Security Agent", and how engineering of prompts and vulnerability information impacts LLM performa,ce
+
+## Hacc-Man: Arcade Game to Jailbreak LLMs
+* Link: https://dl.acm.org/doi/pdf/10.1145/3656156.3665432
+* Large language models allow users to interact with them via natural langauge input. These models present numerous security risks as a result of their black box nature and unpredicatable output.
+* Some strategies used to attack Chat-GPT include encoding and decoding in Base64 and ROT13 to socratic questioning and emulations of fictional Linux machines. Public sharing of jailbreaks and prompt injections made it possible for  LLM programmers to close some security holes.
+* People shared and built upon others' results in informal communities long before academic research on jailbreaks emerged.
+* The Hacc-Man game focuses on jailbreaks and has three main goals...
+  1. Sharing awareness about jailbreaking LLMs and some of the potential risks of deploying fragile models in different contexts
+  2. Sharing the experience of "hacking" LLMs to raise people's efficiency and awareness when interacting with these models
+  3. We wish to explore and categorize the creative problem-solving strategies often applied in the context of jailbreaking LLMs
+### Background and Related Work
+* Previous studies have found non-AI experts generally explore prompt design opportunistically rather than systematically. However, the average user has far more experience with LLMs now than they did back when the study was conducted, so they are likely much more skilled at crafting prompts as well.
+* The Hacc-Man game presents jailbreaking as a challenge to defeat an enemy, which my impact how the user reacts.
+* Research has shown that generative AI can make people doubt their own expertise and abilities, so displaying that jailbreaking is possible and letting the user engage with it could be helpful.
+* To jailbreak LLMs, people must come up with creative strategies to do so. Games can give the abstract nature of AI technology a materiality, thus engaging the user in knowledge-generating processes.
+* Generative AI can improve the standard for creativity assessment (human expert raters evaluate ideas and products) by alleviating the manual resources required for this. Hacc-Man will do similar, building a dataset of successful and unsuccessful jailbreaking attempts via its used.
+* Some existing jailbreaking games include Gandalf Lakera, GPT Prompt Attack, and Tensor Trust (which are not research projects so their data is unavailable).
+### HACC-MAN
+* Application that allows for a non-limited number of users to interact with an LLM to solve different jailbreaking tasks.
+* The game's interface was built using React JavaScript, and user prompts are sent to OpenAI's GPT 3.5, GPT 4.9, or Google Gemma 1.1 and data is stored in a Google Cloud database.
+* Users are asked to create a login and input some demographic information (age, gender, previous experience with LLMs), then choose their opponent. If they press "help", they will receive the instruction provided to the LLM they're speaking with. Some opponents include getting a recruiting assistant bot to hire you and a car dealership bot to offer you a car for free.
+* Tasks are meant to mimic different classes of guardrails, or software that is designed to make the LLM adhere to specific safety and security standards.
+* Getting a model to stray from the desired area or purpose of a conversation is a _topical_ failure, getting a model to produce inaccurate or inappropriate information is a _safety_ threat, and leaking personal information is a _security_ threat.
+
