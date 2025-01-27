@@ -116,3 +116,37 @@ jobs:
       - name: Deploy build to target
         run: echo "Deploying build:${{ inputs.build_id }} to target:${{ inputs.deploy_target }}"
 ```
+# GitHub Secrets
+* A secret is a variable created in an organization, repository, or repository environment. They can be read by GitHub Actions workflows, but only if you explicity include them.
+* For secrets stored at the organization-level, access policies can be used to control which repositories can use them. Organization-level secrets can be shared between several repositories.
+* For secrets stored at the environment level, reviewers can control how they are accessed.
+* Secret names are bound by the following rules....
+  * Names can only contain alphanumeric characters or underscores, no spaces.
+  * Names cannot start with the GITHUB_ prefix, or a number.
+  * Names are case insensitive
+  * Names must be unique at the level they are created at (EX: at the environment level they must be unique to that environment, and the same is true at the repository and organization levels)
+  * If a secret with the same name exists at multiple levels, the one at the lowest level takes precedence (EX: if an organization, repository, and environment all have an identically-named secret, the environment-level one takes precedence).
+* Avoid using structured data as secret values (EX: avoid JSON or encoded Git blobs). Consider manipulating the structured data (EX: encoding them into a String) before storing them as secrets and decoding them before they are used.
+
+## Accessing Secrets
+* To make a secret available to an action, it must be set as an iput or environment variable in the workflow file. Review the action's README file to determine which inputs and environment variables are expected by the action.
+* Organization and repository secrets are read when a workflow run is queued, and environment secrets are read when a job referencing the environment starts.
+
+### Limiting Credential Permissions
+* When generating credentials, grant the minimum permissions possible (EX: a service account or deploy key instead of personal credentials), use only read-only permissions if that is all that is needed.
+* When generating personal access tokens, select minimum scope (permissions and repository access) required, and instead of using a personal access token, consider a GitHub app, which uses fine-grained permissions that are not tied to a user, so the workflow will work even if the installing user leaves the organization.
+
+## Creating Secrets for a Repository
+* You need to be the repository owner, or have admin access for an organization's repository.
+  1. On GitHub, navigate to the main page of the repository
+  2. Under the repository name, click Settings (from the tab or dropdown menu)
+  3. In the "Security" section of the sidebar, select "Secrets and Variables", then click "Actions"
+  4. Click the "Secrets" tab
+  5. Click "New Repository Secret"
+  6. In the "Name" field, type a name for your secret
+  7. In the "Secret" field, enter the value for your secret
+  8. Click "Add Secret"
+* If your repository has environment secrets or can access secrets from the parent organization, then said secrets are also listed on this page.
+
+## Creating Secrets for an Environment
+* 
