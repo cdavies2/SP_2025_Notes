@@ -374,3 +374,30 @@ In this example, we define a test case `TestExample` that inherits from `unittes
 To run the tests, we call `unittest.main()`. This will automatically discover and run all test methods in any test cases defined in the current module.
 
 Note that in a real-world testing scenario, you would likely have more complex tests and use a more sophisticated testing framework like `pytest`. But this example should give you a basic idea of how to write unit tests in Python.
+
+# Sample Code for Having a Running Conversation with the Model, not making a new one each time and Allowing it to Remember Past Discussions
+```
+import os
+from openai import AzureOpenAI
+
+client = AzureOpenAI(
+  api_key = os.getenv("AZURE_OPENAI_API_KEY"),  
+  api_version = "2024-02-01",
+  azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")  # Your Azure OpenAI resource's endpoint value.
+)
+
+conversation=[{"role": "system", "content": "You are a helpful assistant."}]
+
+while True:
+    user_input = input("Q:")      
+    conversation.append({"role": "user", "content": user_input})
+
+    response = client.chat.completions.create(
+        model="gpt-35-turbo", # model = "deployment_name".
+        messages=conversation
+    )
+
+    conversation.append({"role": "assistant", "content": response.choices[0].message.content})
+    print("\n" + response.choices[0].message.content + "\n")
+```
+* Source: https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chatgpt?tabs=python-new
