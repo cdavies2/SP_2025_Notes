@@ -184,3 +184,193 @@ if __name__ == '__main__':
 These tests can be run using the `unittest` module in Python. Simply create a new Python file, copy and paste the above code, and run the file using the `python` command. The tests will automatically run and report any failures.
 
 Note that these tests are not exhaustive and are meant to serve as examples only. You can modify and expand them to suit your specific testing needs.
+
+# More General Unit Test Examples
+# GPT-4
+Certainly! Below are some example unit tests in Python using the `unittest` framework. These tests cover a simple function that adds two numbers and a class that represents a bank account.
+
+### Example Function: Adding Two Numbers
+
+First, let's define a simple function to add two numbers:
+
+```python
+def add(a, b):
+    return a + b
+```
+
+### Unit Tests for the `add` Function
+
+Now, we can create unit tests for this function:
+
+```python
+import unittest
+
+class TestAddFunction(unittest.TestCase):
+    
+    def test_add_positive_numbers(self):
+        self.assertEqual(add(1, 2), 3)
+        
+    def test_add_negative_numbers(self):
+        self.assertEqual(add(-1, -1), -2)
+        
+    def test_add_zero(self):
+        self.assertEqual(add(0, 5), 5)
+        self.assertEqual(add(5, 0), 5)
+        
+    def test_add_floats(self):
+        self.assertAlmostEqual(add(1.5, 2.5), 4.0)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Example Class: Bank Account
+
+Next, let's define a simple `BankAccount` class:
+
+```python
+class BankAccount:
+    def __init__(self, balance=0):
+        self.balance = balance
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.balance += amount
+        else:
+            raise ValueError("Deposit amount must be positive")
+
+    def withdraw(self, amount):
+        if 0 < amount <= self.balance:
+            self.balance -= amount
+        else:
+            raise ValueError("Invalid withdrawal amount")
+
+    def get_balance(self):
+        return self.balance
+```
+
+### Unit Tests for the `BankAccount` Class
+
+Now, we can create unit tests for the `BankAccount` class:
+
+```python
+class TestBankAccount(unittest.TestCase):
+    
+    def setUp(self):
+        self.account = BankAccount(100)  # Start with a balance of 100
+
+    def test_initial_balance(self):
+        self.assertEqual(self.account.get_balance(), 100)
+
+    def test_deposit(self):
+        self.account.deposit(50)
+        self.assertEqual(self.account.get_balance(), 150)
+
+    def test_withdraw(self):
+        self.account.withdraw(30)
+        self.assertEqual(self.account.get_balance(), 70)
+
+    def test_withdraw_invalid_amount(self):
+        with self.assertRaises(ValueError):
+            self.account.withdraw(200)  # More than the balance
+
+    def test_deposit_negative_amount(self):
+        with self.assertRaises(ValueError):
+            self.account.deposit(-50)  # Invalid deposit
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### Running the Tests
+
+To run the tests, you can save the code in a Python file (e.g., `test_example.py`) and execute it. The `unittest` framework will automatically discover and run the tests, providing you with a report of the results.
+
+You can run the tests from the command line using:
+
+```bash
+python -m unittest test_example.py
+```
+
+This will execute all the test cases defined in the file.
+
+# Llama3
+Here are some example unit tests in Python using the unittest framework:
+
+```python
+import unittest
+
+# Function to test
+def add_numbers(a, b):
+    return a + b
+
+def is_even(n):
+    return n % 2 == 0
+
+def greet(name):
+    return f"Hello, {name}!"
+
+class TestMathFunctions(unittest.TestCase):
+
+    def test_add_numbers(self):
+        self.assertEqual(add_numbers(2, 3), 5)
+        self.assertEqual(add_numbers(-1, 1), 0)
+        self.assertEqual(add_numbers(-1, -1), -2)
+
+    def test_is_even(self):
+        self.assertTrue(is_even(4))
+        self.assertFalse(is_even(3))
+        self.assertTrue(is_even(0))
+
+    def test_greet(self):
+        self.assertEqual(greet("John"), "Hello, John!")
+        self.assertEqual(greet(""), "Hello, !")
+
+class TestErrorHandling(unittest.TestCase):
+
+    def test_add_numbers_error(self):
+        with self.assertRaises(TypeError):
+            add_numbers("a", 2)
+
+    def test_is_even_error(self):
+        with self.assertRaises(TypeError):
+            is_even("a")
+
+    def test_greet_error(self):
+        with self.assertRaises(TypeError):
+            greet(123)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+In this example, we have two test classes: `TestMathFunctions` and `TestErrorHandling`. The `TestMathFunctions` class tests the `add_numbers`, `is_even`, and `greet` functions with valid inputs. The `TestErrorHandling` class tests these functions with invalid inputs to ensure they raise the expected errors.
+
+To run these tests, save this code to a file (e.g., `test_math_functions.py`) and run it using the command `python -m unittest test_math_functions`.
+
+# Mixtral
+ Sure, I can provide an example of unit tests in Python. Here's a simple example using the `unittest` module:
+```python
+import unittest
+
+class TestExample(unittest.TestCase):
+    def test_addition(self):
+        self.assertEqual(1 + 1, 2)
+
+    def test_subtraction(self):
+        self.assertEqual(3 - 2, 1)
+
+    def test_multiplication(self):
+        self.assertEqual(2 * 3, 6)
+
+    def test_division(self):
+        self.assertEqual(4 / 2, 2)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+In this example, we define a test case `TestExample` that inherits from `unittest.TestCase`. We then define several test methods, each of which tests a different operation. The `assertEqual` method is used to check that the expected and actual values are equal.
+
+To run the tests, we call `unittest.main()`. This will automatically discover and run all test methods in any test cases defined in the current module.
+
+Note that in a real-world testing scenario, you would likely have more complex tests and use a more sophisticated testing framework like `pytest`. But this example should give you a basic idea of how to write unit tests in Python.
