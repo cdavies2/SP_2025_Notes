@@ -51,6 +51,54 @@ jobs:
 * You can also pass inputs when you run a workflow from a script
 * Source: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#workflow_dispatch
 
+## schedule
+* The schedule event can be delayed during periods of high loads of GitHub Actions workflow runs. To decrease chances of delay, don't schedule the workflow to run at the start of an hour
+* Scheduled workflows only run on the default branch.
+* In a public repository, scheduled workflows are automatically disabled when no repository activity has occurred in 60 days.
+* The `schedule` event allows you to trigger a workflow at a scheduled time.
+* You can schedule a workflow to run at specific UTC times using POSIX cron syntax. Scheduled workflows run on the latest commit on the default or base branch.
+* The example below triggers the workflow every day at 5:30 and 17:30 UTC
+```
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '30 5,17 * * *'
+```
+### cron Syntax
+* minute, hour, day, month, day (week)
+* * (asterisk)= any value
+*  , = value list separator
+*  - = range of values
+*  @yearly/@annually (non-standard)
+*  @monthly (non-standard)
+*  @weekly (non-standard)
+*  @daily (non-standard)
+*  @hourly (non-standard)
+*  @reboot (non-standard)
+*  Example:  54*** = "At 04:05"
+*  EX 2: 15 9 4 7 * = "At 9:15 on July 4th"
+*  EX 3: 30 3 * * 2 = "At 3:30 on Tuesday"
+*  EX 4: 45 2 * * 0 = "At 2:45 on Sunday
+
+## schedule (continued)
+* A single workflow can be triggered by multiple `schedule` events. The schedule event that triggers a workflow can be accessed through the github.event.schedule context
+* The example below triggers the workflow to run at 5:30 UTC every Monday-Thursday, but skips the `Not on Monday or Wednesday` step on those days
+```
+on:
+  schedule:
+    - cron: '30 5 * * 1,3'
+    - cron: '30 5 * * 2,4'
+
+jobs:
+  test_schedule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Not on Monday or Wednesday
+        if: github.event.schedule != '30 5 * * 1,3'
+        run: echo "This step will be skipped on Monday and Wednesday"
+      - name: Every time
+        run: echo "This step will always run"
+```
 ## inputs Context
 * The `inputs` context contains input properties passed to an action, to a reusable workflow, or to a manually triggered workflow. For reusable workflows, the input names and types are defined in the `workflow_call` event configuration of a reusable workflow, and the input values are passed from `jobs.<job_id>.with` in an external workflow that calls the reusable workflow. For manually triggered workflows, the inputs are defined in the `workflow_dispatch` event configuration of a workflow.
 * The properties in the `inputs` context are defined in the workflow file. They are only available in a reusable workflow or in a workflow triggered by the `workflow dispatch` event.
