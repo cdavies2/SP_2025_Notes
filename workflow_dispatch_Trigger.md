@@ -116,6 +116,8 @@ jobs:
       - name: Deploy build to target
         run: echo "Deploying build:${{ inputs.build_id }} to target:${{ inputs.deploy_target }}"
 ```
+* Source: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/accessing-contextual-information-about-workflow-runs#inputs-context
+
 # GitHub Secrets
 * A secret is a variable created in an organization, repository, or repository environment. They can be read by GitHub Actions workflows, but only if you explicity include them.
 * For secrets stored at the organization-level, access policies can be used to control which repositories can use them. Organization-level secrets can be shared between several repositories.
@@ -171,3 +173,4 @@ steps:
     env: # Or as an environment variable
       super_secret: ${{ secrets.SuperSecret }}
 ```
+* Source: https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions#using-secrets-in-a-workflow
