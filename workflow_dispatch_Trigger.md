@@ -77,8 +77,9 @@ on:
 *  @reboot (non-standard)
 *  Example:  54*** = "At 04:05"
 *  EX 2: 15 9 4 7 * = "At 9:15 on July 4th"
-*  EX 3: 30 3 * * 2 = "At 3:30 on Tuesday"
-*  EX 4: 45 2 * * 0 = "At 2:45 on Sunday
+*  EX 3: 30 15 * * 2 = "At 3:30PM on Tuesday"
+*  EX 4: 45 14 * * 0 = "At 2:45PM on Sunday"
+*  These use military time, not AM and PM, remember
 
 ## schedule (continued)
 * A single workflow can be triggered by multiple `schedule` events. The schedule event that triggers a workflow can be accessed through the github.event.schedule context
