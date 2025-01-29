@@ -149,4 +149,25 @@ jobs:
 * If your repository has environment secrets or can access secrets from the parent organization, then said secrets are also listed on this page.
 
 ## Creating Secrets for an Environment
-* 
+* You must own the repository or have admin access.
+  1. On GitHub, navigate to the main page of the repository
+  2. Under the repository name, click "Settings" (from tab or dropdown)
+  3. In the left sidebar, click "Environments"
+  4. Click the environment you want to add a secret to
+  5. Under "Environment secrets", click "Add secret"
+  6. Type a name for your secret in the "Name" input box
+  7. Enter the value for your secret
+  8. Click "Add secret"
+## Using Secrets in a Workflow
+* Secrets are not passed to the runner when a workflow is triggered from a forked repository, and they are not automatically passed to reusable workflows.
+* To provide an action with a secret as an input or environment variable, you can use the `secrets` context to access secrets you've created in your repository.
+* It's recommended to set secrets as job-level environment variables and reference the environment variables to conditionally run steps in the job.
+* Example code below
+```
+steps:
+  - name: Hello world action
+    with: # Set the secret as an input
+      super_secret: ${{ secrets.SuperSecret }}
+    env: # Or as an environment variable
+      super_secret: ${{ secrets.SuperSecret }}
+```
