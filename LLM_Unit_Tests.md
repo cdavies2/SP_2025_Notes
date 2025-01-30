@@ -404,200 +404,116 @@ while True:
 
 # HTTP Server Tests
 ## Chat-GPT
-To evaluate the capabilities of a simple HTTP server built in Python with Flask, you can create unit tests that cover various aspects of the server's functionality. Below is an example of a good unit test suite using the `unittest` framework along with `Flask`'s test client.
+When writing unit tests for a simple HTTP server using Flask and the Requests library, you want to ensure that your server behaves as expected under various conditions. Here are some good unit tests you might consider implementing:
 
-### Example Flask Application
-
-First, let's assume you have a simple Flask application like this:
-
-```python
-from flask import Flask, jsonify, request
-
-app = Flask(__name__)
-
-@app.route('/api/greet', methods=['GET'])
-def greet():
-    name = request.args.get('name', 'World')
-    return jsonify(message=f'Hello, {name}!')
-
-@app.route('/api/data', methods=['POST'])
-def data():
-    json_data = request.get_json()
-    return jsonify(received=json_data), 201
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-
-### Unit Tests
-
-Now, you can create a test suite to evaluate the capabilities of this server:
+### 1. **Basic Response Test**
+Test that the server responds with a 200 OK status for a valid endpoint.
 
 ```python
 import unittest
-from app import app  # Assuming your Flask app is in app.py
+from flask import Flask
+import requests
 
-class FlaskAppTests(unittest.TestCase):
+app = Flask(__name__)
 
+@app.route('/hello', methods=['GET'])
+def hello():
+    return 'Hello, World!', 200
+
+class TestFlaskServer(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
         self.app.testing = True
 
-    def test_greet_default(self):
-        response = self.app.get('/api/greet')
+    def test_hello_endpoint(self):
+        response = self.app.get('/hello')
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {'message': 'Hello, World!'})
-
-    def test_greet_with_name(self):
-        response = self.app.get('/api/greet?name=Alice')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json, {'message': 'Hello, Alice!'})
-
-    def test_data_post(self):
-        response = self.app.post('/api/data', json={'key': 'value'})
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.json, {'received': {'key': 'value'}})
-
-    def test_data_post_no_json(self):
-        response = self.app.post('/api/data', data='Not JSON')
-        self.assertEqual(response.status_code, 400)  # Assuming you handle this case
+        self.assertEqual(response.data.decode(), 'Hello, World!')
 
 if __name__ == '__main__':
     unittest.main()
 ```
 
-### Explanation of Tests
-
-1. **`test_greet_default`**: Tests the `/api/greet` endpoint without any query parameters. It checks if the default greeting is returned correctly.
-
-2. **`test_greet_with_name`**: Tests the `/api/greet` endpoint with a query parameter `name`. It verifies that the server responds with the correct greeting.
-
-3. **`test_data_post`**: Tests the `/api/data` endpoint with a JSON payload. It checks if the server correctly receives and echoes back the JSON data with a 201 status code.
-
-4. **`test_data_post_no_json`**: Tests the `/api/data` endpoint with invalid data (not JSON). It checks if the server responds with a 400 status code, assuming you have error handling for this case.
-
-### Running the Tests
-
-To run the tests, save the test code in a file (e.g., `test_app.py`) and execute it using:
-
-```bash
-python -m unittest test_app.py
-```
-
-This will run all the defined tests and provide you with feedback on the server's capabilities. You can expand the tests further based on additional features and endpoints in your Flask application.
-
-## Llama3
-Here are some unit test ideas to evaluate the capabilities of a simple HTTP server built in Python with Flask:
-
-### Test Suite Structure
+### 2. **Not Found Test**
+Test that the server returns a 404 status for an invalid endpoint.
 
 ```python
-import unittest
-from your_flask_app import app
-
-class TestSimpleHTTPServer(unittest.TestCase):
-    def setUp(self):
-        self.app = app.test_client()
-
-    def test_get_root(self):
-        # Test the root endpoint
-        response = self.app.get('/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_get_non_existent_endpoint(self):
-        # Test a non-existent endpoint
-        response = self.app.get('/non-existent')
-        self.assertEqual(response.status_code, 404)
-
-    def test_post_root(self):
-        # Test posting to the root endpoint
-        response = self.app.post('/')
-        self.assertEqual(response.status_code, 405)  # Assuming POST is not allowed
-
-    def test_get_with_query_params(self):
-        # Test getting with query parameters
-        response = self.app.get('/?key=value')
-        self.assertEqual(response.status_code, 200)
-
-    def test_post_with_json_body(self):
-        # Test posting with a JSON body
-        response = self.app.post('/endpoint', json={'key': 'value'})
-        self.assertEqual(response.status_code, 200)  # Assuming POST is allowed
-
-    def test_head_request(self):
-        # Test a HEAD request
-        response = self.app.head('/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_options_request(self):
-        # Test an OPTIONS request
-        response = self.app.options('/')
-        self.assertEqual(response.status_code, 200)
-
-    def test_put_request(self):
-        # Test a PUT request
-        response = self.app.put('/endpoint', json={'key': 'value'})
-        self.assertEqual(response.status_code, 405)  # Assuming PUT is not allowed
-
-    def test_delete_request(self):
-        # Test a DELETE request
-        response = self.app.delete('/endpoint')
-        self.assertEqual(response.status_code, 405)  # Assuming DELETE is not allowed
-
-if __name__ == '__main__':
-    unittest.main()
+def test_not_found(self):
+    response = self.app.get('/invalid-endpoint')
+    self.assertEqual(response.status_code, 404)
 ```
 
-### Test Cases
-
-1. **Test the root endpoint**: Verify that the root endpoint (`/`) returns a 200 OK status code.
-2. **Test a non-existent endpoint**: Verify that a non-existent endpoint returns a 404 Not Found status code.
-3. **Test posting to the root endpoint**: Verify that posting to the root endpoint returns a 405 Method Not Allowed status code (assuming POST is not allowed).
-4. **Test getting with query parameters**: Verify that getting with query parameters returns a 200 OK status code.
-5. **Test posting with a JSON body**: Verify that posting with a JSON body returns a 200 OK status code (assuming POST is allowed).
-6. **Test a HEAD request**: Verify that a HEAD request returns a 200 OK status code.
-7. **Test an OPTIONS request**: Verify that an OPTIONS request returns a 200 OK status code.
-8. **Test a PUT request**: Verify that a PUT request returns a 405 Method Not Allowed status code (assuming PUT is not allowed).
-9. **Test a DELETE request**: Verify that a DELETE request returns a 405 Method Not Allowed status code (assuming DELETE is not allowed).
-
-### Additional Test Cases
-
-* Test error handling: Verify that the server returns the correct error messages and status codes for different types of errors (e.g., 500 Internal Server Error, 400 Bad Request).
-* Test authentication and authorization: Verify that the server correctly handles authentication and authorization for different endpoints and methods.
-* Test CORS: Verify that the server correctly handles CORS requests and returns the correct headers.
-
-Note: These test cases are just a starting point, and you may need to add more test cases depending on the specific requirements of your HTTP server.
-
-## Mixtral
- A good unit test to evaluate the capabilities of a simple HTTP server built in Python with Flask would be to test the server's ability to handle different types of HTTP requests, such as GET, POST, PUT, DELETE, etc., and to check if the server returns the correct status code and response body for each request.
-
-Here is an example of a unit test for a simple HTTP server that has a single endpoint "/" which returns "Hello, World!" as the response body for a GET request:
+### 3. **Post Request Test**
+Test that the server correctly handles a POST request and returns the expected response.
 
 ```python
-from flask import Flask
-import unittest
+@app.route('/data', methods=['POST'])
+def data():
+    return 'Data received', 201
 
-app = Flask(__name__)
-
-@app.route("/")
-def hello():
-    return "Hello, World!"
-
-class TestFlaskApp(unittest.TestCase):
-    def setUp(self):
-        self.app = app.test_client()
-
-    def test_homepage(self):
-        response = self.app.get("/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data, b"Hello, World!")
-
-if __name__ == "__main__":
-    unittest.main()
+def test_post_data(self):
+    response = self.app.post('/data', json={'key': 'value'})
+    self.assertEqual(response.status_code, 201)
+    self.assertEqual(response.data.decode(), 'Data received')
 ```
 
-This test case creates a new instance of the Flask app's test client, which is used to send HTTP requests to the server. The `test_homepage` method sends a GET request to the root endpoint of the server and checks that the response status code is 200 and that the response body is "Hello, World!".
+### 4. **Error Handling Test**
+Test that the server handles errors gracefully, such as returning a 400 status for bad requests.
 
-You can add more test cases to test other endpoints, different HTTP methods, and different response data.
+```python
+@app.route('/divide', methods=['POST'])
+def divide():
+    data = request.get_json()
+    try:
+        result = data['numerator'] / data['denominator']
+        return {'result': result}, 200
+    except ZeroDivisionError:
+        return {'error': 'Division by zero'}, 400
+    except KeyError:
+        return {'error': 'Invalid input'}, 400
 
-It's also a good idea to test for error handling, such as sending a request to a non-existent endpoint or sending an invalid request, and check that the server returns the correct error status code and response body.
+def test_divide_by_zero(self):
+    response = self.app.post('/divide', json={'numerator': 10, 'denominator': 0})
+    self.assertEqual(response.status_code, 400)
+    self.assertIn('Division by zero', response.get_json()['error'])
+```
+
+### 5. **JSON Response Test**
+Test that the server returns a JSON response with the correct content type.
+
+```python
+@app.route('/json', methods=['GET'])
+def json_response():
+    return {'message': 'Hello, JSON!'}, 200
+
+def test_json_response(self):
+    response = self.app.get('/json')
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.content_type, 'application/json')
+    self.assertEqual(response.get_json(), {'message': 'Hello, JSON!'})
+```
+
+### 6. **Authentication Test**
+If your server has authentication, test that it correctly handles authorized and unauthorized requests.
+
+```python
+@app.route('/protected', methods=['GET'])
+def protected():
+    auth = request.authorization
+    if auth and auth.username == 'user' and auth.password == 'pass':
+        return 'Protected content', 200
+    return 'Unauthorized', 401
+
+def test_protected_route(self):
+    response = self.app.get('/protected', auth=('user', 'pass'))
+    self.assertEqual(response.status_code, 200)
+
+    response = self.app.get('/protected')
+    self.assertEqual(response.status_code, 401)
+```
+
+### 7. **Performance Test (Optional)**
+While not a unit test, you might want to include a performance test to ensure your server can handle a certain number of requests in a given time frame.
+
+### Conclusion
+These tests cover a range of scenarios, including basic functionality, error handling, and response formats. You can expand upon these tests based on the specific features and requirements of your HTTP server. Remember to run your tests frequently during development to catch any issues early!
