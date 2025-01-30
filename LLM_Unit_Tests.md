@@ -550,3 +550,4 @@ class TestApp(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 ```
+* In our example server, tests 1 and 2 from GPT-4 were succesful, the response.get_json() function from test 5 was used in a different successful test, and the others weren't as applicable. None of the llama3 tests succeeded, as the required connection didn't work.
