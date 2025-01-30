@@ -517,3 +517,36 @@ While not a unit test, you might want to include a performance test to ensure yo
 
 ### Conclusion
 These tests cover a range of scenarios, including basic functionality, error handling, and response formats. You can expand upon these tests based on the specific features and requirements of your HTTP server. Remember to run your tests frequently during development to catch any issues early!
+
+## Llama3
+You can run these tests using the unittest command, and they will report whether the tests pass or fail.
+You can use the requests library to make requests to the API, and test the responses in a similar way
+# test_app.py
+import unittest
+import requests
+```
+class TestApp(unittest.TestCase):
+
+    def setUp(self):
+        self.base_url = 'http://localhost:5000'
+
+    def test_get_users(self):
+        response = requests.get(f'{self.base_url}/users')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(len(data), 2)
+
+    def test_get_user(self):
+        response = requests.get(f'{self.base_url}/users/1')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['id'], 1)
+        self.assertEqual(data['name'], 'User 1')
+
+    def test_get_user_not_found(self):
+        response = requests.get(f'{self.base_url}/users/999')
+        self.assertEqual(response.status_code, 404)
+
+if __name__ == '__main__':
+    unittest.main()
+```
