@@ -522,9 +522,9 @@ These tests cover a range of scenarios, including basic functionality, error han
 You can run these tests using the unittest command, and they will report whether the tests pass or fail.
 You can use the requests library to make requests to the API, and test the responses in a similar way
 # test_app.py
+```
 import unittest
 import requests
-```
 class TestApp(unittest.TestCase):
 
     def setUp(self):
