@@ -116,3 +116,4 @@ model.generate(**formatted_chat)
 * The model will generate text that continues the JSON string, rather than starting a new message.
 * Because `add_generation_prompt` adds the tokens that start a new message, and `continue_final_message` removes any end-of-message tokens from the final message, you cannot use them together.
 * The default behavior of `TextGenerationPipeline` is to set `add_generation_prompt=True` so that it starts a new message. However, if the final message in the input chat has the "assistant" role, it will assume that this message is a prefill and switch to `continue_final_message=True` instead, because most models do not support multiple consecutive assistant messages. This can be overridden by explicitly passing the `continue_final_message` argument when calling the pipeline.
+* https://huggingface.co/docs/transformers/en/tasks/prompting
