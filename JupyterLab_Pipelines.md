@@ -35,6 +35,7 @@
   *  max_new_tokens: maximum tokens generated
     * EX: max_new_tokens=128
   * model_kwargs-"torch_dtype": torch.bfloat16: bfloat16 is the default data type
+  * tokenizer(str or PreTrainedTokenizer): the tokenizer that will be used by the pipeline to encode data for the model. This can be None, a model identifier, or an actual pre-trained tokenizer inheriting from PreTrainedTokenizer
 * https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
 
 ## LLM Prompting Guide
