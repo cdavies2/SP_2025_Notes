@@ -34,9 +34,8 @@
     *  EX: (model="mistralai/Mistral-7B-v0.1)
   *  max_new_tokens: maximum tokens generated
     * EX: max_new_tokens=128
-  * 
-    
-   
+  * model_kwargs-"torch_dtype": torch.bfloat16: bfloat16 is the default data type
+* https://huggingface.co/transformers/v3.0.2/main_classes/pipelines.html
 
 ## LLM Prompting Guide
 * Large language models like Falcon and Llama are pretrained transformer models initially trained to predict the next token given some input text.
@@ -55,3 +54,65 @@ prompt = "Hello, I'm a language model"
 generator(prompt, max_length = 30)
 ```
 * https://huggingface.co/docs/transformers/en/tasks/prompting
+
+## Chat Templates
+* In a chat context, rather than continuing a single string of text, the model instead continues a conversation that consists of one or more messages, each of which includes a role like "user" or "assistant" along with message text.
+* Much like tokenization, different models expect different input formats for chat, so chat templates (part of the tokenizer) specify how to convert conversations, represented as lists of messages, into a single tokenizable string in the expected format.
+* The example below uses the mistralai/Mistral-7B-Instruct-v0.1 model
+```
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained("mistralai/Mistral-7B-Instruct-v0.1")
+
+chat = [
+  {"role": "user", "content": "Hello, how are you?"},
+  {"role": "assistant", "content": "I'm doing great. How can I help you today?"},
+  {"role": "user", "content": "I'd like to show off how chat templating works!"},
+]
+
+tokenizer.apply_chat_template(chat, tokenize=False)
+```
+* The tokenizer adds the control tokens [INST] and [/INST] to indicate start and end of user messages (but not assistant messages) and condenses the chat into a single string.
+
+ ### Is there an Automated Pipeline for Chat?
+ * Text generation pipelines support chat inputs, making it easy to use chat models. This has been functionally merged into the TextGenerationPipeline, and works as below
+```
+from transformers import pipeline
+
+pipe = pipeline("text-generation", "HuggingFaceH4/zephyr-7b-beta")
+messages = [
+    {
+        "role": "system",
+        "content": "You are a friendly chatbot who always responds in the style of a pirate",
+    },
+    {"role": "user", "content": "How many helicopters can a human eat in one sitting?"},
+]
+print(pipe(messages, max_new_tokens=128)[0]['generated_text'][-1])  # Print the assistant's response
+```
+* The pipeline takes care of all the details of tokenization and calling `apply_chat_template` for you. Just initialize the pipeline and pass it the list of messages
+
+### What are "Generation Prompts"?
+* The `add_generation_prompt` argument in the `apply_chat_template` method tells the template to add tokens that indicate the start of a bot response. For instance....
+```
+messages = [
+    {"role": "user", "content": "Hi there!"},
+    {"role": "assistant", "content": "Nice to meet you!"},
+    {"role": "user", "content": "Can I ask a question?"}
+]
+```
+* By adding the tokens that indicate the start of a bot response, we ensure that when the model generates text, it will write a bot response instead of say, continuing the user's message.
+
+### What does "continue_final_message" do?
+* When passing a list of messages to `apply_chat_template` or `TextGenerationPipeline` you can choose to format the chat so the model will continue the final message in the chat instead of starting a new one.
+* This is done by removing any end-of-sequence tokens that indicate the end of the final message, so the model will simply extend the final mesage when it begins to generate text. An example is below...
+```
+chat = [
+    {"role": "user", "content": "Can you format the answer in JSON?"},
+    {"role": "assistant", "content": '{"name": "'},
+]
+
+formatted_chat = tokenizer.apply_chat_template(chat, tokenize=True, return_dict=True, continue_final_message=True)
+model.generate(**formatted_chat)
+```
+* The model will generate text that continues the JSON string, rather than starting a new message.
+* Because `add_generation_prompt` adds the tokens that start a new message, and `continue_final_message` removes any end-of-message tokens from the final message, you cannot use them together.
+* The default behavior of `TextGenerationPipeline` is to set `add_generation_prompt=True` so that it starts a new message. However, if the final message in the input chat has the "assistant" role, it will assume that this message is a prefill and switch to `continue_final_message=True` instead, because most models do not support multiple consecutive assistant messages. This can be overridden by explicitly passing the `continue_final_message` argument when calling the pipeline.
