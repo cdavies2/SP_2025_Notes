@@ -54,7 +54,35 @@
 * The integer R' exists because of the assumption that R and N are coprime. It can be constructed using the extended Euclidean algorithm. 0<R'<N, 0<N'<R, and RR' - NN' = 1
 * A straightforward algorithm to multiply numbers in Montgomery form is to multiply aR mod N, bR mod N, and R' as integers and reduce modulo N.
 * EX: to multiply 7 and 15 modulo 17 in Montgomery form, again with R = 100, compute the product of 3*4=12. The extended Euclidean algorithm implies that 8 *100 - 47 *17=1 so R'=8. Multiply 12 by 8 to get 96 and reduce modulo 17 to get 11, resulting in a Montgomery form of 3, as expected.
-* (Come back to this later and look at REDC)
+ ## The REDC Algortihm
+ * The above algorithm is slower than multiplication in the standard representation because of the need to multiply by R' and divide by N.
+ * Montgomery reduction, or REDC, is an algorihm that simultaneously computes the product by R' and reduces modulo N more quickly than the Naive method.
+ * While conventional modular reduction focuses on making a number more divisible by R. It does this by adding a small multiple of N which is sophisticatedly chosen to cancel the residue modulo R. Dividing the result by R yields a much smaller number (nearly the reduction modulo N, and computing the reduction modulo N), and all that's required is a final conditional subtraction. All computations are done using only reduction and divisions with respect to R, not N, so the algorithm runs faster than a straighforward modular reduction by division.
+ * The REDC algorithm is seen below....
+```
+function REDC is
+    input: Integers R and N with gcd(R, N) = 1,
+           Integer N′ in [0, R − 1] such that NN′ ≡ −1 mod R,
+           Integer T in the range [0, RN − 1].
+    output: Integer S in the range [0, N − 1] such that S ≡ TR−1 mod N
+
+    m ← ((T mod R)N′) mod R
+    t ← (T + mN) / R
+    if t ≥ N then
+        return t − N
+    else
+        return t
+    end if
+end function
+```
+* To see that this algorithm is correct, first observe that m is chosen so that T + mN is divisible by R, A number is divisible by R if and only if it is congruent to zero mod R, so we have....
+ *  T + mN = T + ((T mod R)N')mod R)N = T + TN'N=T-T=0(mod R)
+* Therefore, t is an integer. Second, the output is either t or t-N, both of which are congruent to t Mod N, therefore to prove that the output is congruent to TR^-1modN, if suffices to prove that t is TR^-1 mod N, t satisfies:
+ * t=(T+mN)R^-1=TR^-1 + (mR^-1)N = TR^-1 (mod N)
+* Therefore, the output has the correct residue class.
+* m is in [0, R-1] and therefore T + mN is between 0 and (RN-1) + (R-1)N<2RN. t is less than 2N, and because it's an integer, this puts t in the range [0, 2N-1]. Therefore, reducing t into the desired range requires at most a single subtraction, so the algorithm's output lies in the correct range.
+* To use REDC to compute the product of 7 and 15 modulo 17, first convert to Montgomery form and multiply as integers to get 12 as above. Then apply REDC with R=100, N=17, N'=47, and T=12.
+* The first step sets m to 12 * 47 mod 100=64. The second step sets t to (12+64 * 17) /100. Notice that 12 + 64 * 17 is 1100, a multiple of 100 as expected. t is set to 11, which is less than 17, so the final result is 11.    
 * Source: https://en.wikipedia.org/wiki/Montgomery_modular_multiplication
 
 # Polynomial Interpolation
