@@ -139,3 +139,42 @@ conda install numpy
 pip install torch torchvision torchaudio
 ```
 Source: https://sciserver.sdcc.bnl.gov/scisrvdoc/03_conda_env/condaenv.html
+
+# SciServer Compute
+* SciServer compute allows users to create and run Jupyter Notebooks containing code and instructions to analyze and process SciServer hosted data sets.
+* The full capabilties of Jupyter are available to users within containers
+* A container in SciServer Compute is a defined environment within which Jupyter Notebook runs, and it isolates users' work from both the rest of the SciServer system and other users.
+* Data that you want to keep should NEVER be stored in the container itself. Always store data files in the _Storage_ or _Temporary_ storage pools. These are external to the container and accessible when containers are closed or deleted.
+ ## Creating New Containers
+ * When you press the "Create Container" button, the following options appear....
+  * Container Name: Chosen by You
+  * Domain: Drop down that should always be left at the default value "Interactive Docker Compute Domain"
+  * Image: defines a "software environment" for the Jupyter notebooks that you want to run. The images contain libraries tailored to different needs. You choose an image that supports the language you are interested in (python, R, Matlab, etc), but there are "specialty" science domain specific images that you might have access to if the creator of those images has shared it with you
+  * User Volumes: list of all User Volumes that you have access to, either which you own, or which have been shared with you. When you select some of these, on container creation these folders will be "mounted" and will be accessible as if they were local files. This simplifies file access and management.
+  * Data Volumes: series of special Data Volumes that are either shared publicly with all users, or for which you have been given special access privileges to see. Selecting these Volumes will mount them and make them appear "local" in the Container. These will always be mounted "readonly"
+
+# SciServer Compute Jobs
+* Jobs allow a user to run a Jupyter Notebook or a standard script in offline batch mode.
+* A job might be created because....
+ * Executing the notebook may take a long time, and you want to set it running and do something else without worrying about browser sessions timing out
+ * You may develop your code interactively to make sure the algorithm works, using a small amount of data to test it out, but you really want to run the code against a full dataset, which will require massive resources for memory and CPU, as well as execution time.
+ * You are provided with far more resources (CPU and memory) to execute a Job than you are in an Interactive Session.
+* SciServer allows two "types" of jobs....
+   1. Specify a script to execute, or a command line command
+   2. Specift an existing Jupyter Notebook that you previously developed (meaning you can develop your Jupyter Notebook interactively and "submit" the same notebook as a Job)
+
+## Creating and Running a Job
+1. Go to the Compute Jobs Page
+2. Click "Run Existing Notebook"
+3. On the "Compute Domain" Tab, choose the Compute Domain, for which most cases currently there will only be one option, and you can enter a "Job Alias" to more easily find your job later
+4. On the "Compute Image" Tab, pick the "Image" you need to use (each one contains different tools and programming language support)
+5. On the "Data Volumes" Tab, select all the data volumes with appropriate permissions needed for the job
+6. On the "User Volumes" Tab, select all Folder systems that you would like to be made accessible to your Compute notebook. For Folders that you own, or that have been shared with you and you were given the appropriate permissions, you can select whether a given folder is read only or writable. Folders that you don't own will be readonly by default.
+7. On the "Notebook" tab, navigate to the Notebook you wish to use as the basis for your Job and select it. Enter any additional parameters that the Notebook can read in to affect how the code is executed. Choose a directory where the output results will go, by default these will go to jobs within which subdirectories will be created and your results written to. You can also choose a specific directory to output results.
+8. When everything has been entered you can press "Create Job", and the Job will be submitted and displayed in a Jobs Table view.
+9. The table will be refreshed every few seconds and tell you the status of the Job.
+10. While the job is still running there is a red X that can cancel it.
+11. Pressing the down triangle on the right-hand side expands the view and shows more information. This includes status information about the Job, the path to the location of the results, and links to the results output. Those links include...
+  * _Browse Working Directory_: take you to the Dashboard Files tab and show you the output files as well as the original Python Notebooks
+  * _Download Standard Output_ and _Download Standard Error_ allow you to download two text files as appropriate and according to your browser settings. 
+* Source: https://www.sciserver.org/support/how-to-use-sciserver/
