@@ -92,3 +92,33 @@
 
 ## Conclusion
 * By implementing HE with a combination of privacy-preserving technologies like PIR and PNNS, on-device and server-side ML models, and other privacy preserving techniques, we are able to deliver features like Enhanced Visual Search without revealing to the server any information about a user's on-device content and activity.
+
+# Empowering Collaboration, Ensuring Privacy: The Future of AI Training with Homomorphic Encryption
+* As AI technology becomes more prominent, many ask how organizations can harness the power of collective data without violating individual's privacy. Homomorphic encryption could be the solution.
+## Background
+* AI models require large quantities of data for training. Homomorphic Encryption (HE) allows computations on encrypted data without needing to decrypt it first.
+* Historically, training collaborative AI models required sharing raw data with all parties involved, which posed significant privacy risks. HE makes it possoible to train models without exposing the raw data. Instead, encrypted data is shared and processed, ensuring that sensitive information remains concealed throughout the training process. This allows industries that utilize confidential infromation (healthcare, finance) to collaborate on AI projects without compromising on data security.
+## How Homomorphic Encryption Works in Collaborative AI
+* HE ensures that data can remain encrypted even during processing, thus ensuring its confidentiality. Here's how it works....
+  1. _Encryption_-before any collaboration begins, each participating entity encrypts its dataset using a homomorphic encryption scheme. This ensures that the raw data is never exposed to other participants or even the central server where computations might occur
+  2. _Collaborative Computation_-once encrypted, these datasets can be combined or used in comptuations without being decrypted. For instance, in training a machine learning model, the model can learn from the encrypted data from multiple sources, updating its weights and biases based on the encrypted inputs and outputs.
+  3. _Decryption_-after the computations are complete, the results (like a trained model or prediction outputs) remain encrypted. They can be decrypted only by entities possessing the appropriate decryption key. This ensures that intermediate results, which might contain sensitive information, are never exposed
+  4. _Benefits in Collaboration_-in a traditional collaborative AI setting without HE, data from different sources would need to be combined in a raw, unencrypted form, posing significant privacy risks. With HE, each participant retains control over their data's privacy. They can contribute to the collaborative effort without ever revealing their raw data.
+  5. _Enhanced Trust_-since data remains encrypted throughout the process, participants can trust the system even if they don't necessarily trust all other participants or the central server. This trust is crucial for collaborations between entities that might be competitors in the market or operate in highly regulated industries.
+* Overall, HE is a shield, ensuring that AI models can learn from various data sources but the individual points' privacy remains uncompromised. Privacy and collaboration are balanced.
+## Real-world Applications
+* HE is being utilized in various real-world environments, such as....
+  1. _Healthcare_-patient data is among the most sensitive information, and sharing it for research or analysis often poses ethical and legal challenges. With HE, hospitals and research institutions can collaboratively analyze encrypted patient data, deriving insights without compromising individual privacy.
+  2. _Finance_: financial institutions, using HE, can collaborate on fraud detection models or credit scoring algorithms without revealing sensitive information to each other
+  3. _Smart Cities_: as cities become smarter, they collect vast amounts of data from sensors, cameras, and other IoT devices. HE allows for the analysis of this data across different city departments or even different cities without compromising citizen privacy
+  4. _Education_: educational institutions can use HE to analyze student performance, curriculum effectiveness, or even for collaborative research without revealing individual student data.
+## Future Prospects
+* Some future improvements anticipated because of HE are....
+  1. _Computational Efficiency_: with ongoing advancements, HE is set to overcome its current computational challenges, broadening its applicability.
+  2. _Quantum Computing_: as quantum technology evolves, HE stands as a potential safeguard against quantum-related encryption vulnerabilities
+  3. _Industry Expansion_: beyond healthcare and finance, sectors like entertainment and manufacturing are likely to embrace HE, driven by increasing data privacy awareness
+  4. _Advanced AI Models_: the future may see encrypted neural networks and other sophisticated AI models trained using HE, enchancing collaborate AI capabilities.
+  5. _Data Marketplaces_: HE could catalyze the creation of global platofrms where encrypted datasets are shared for AI training, democratizing data access
+  6. _Personal Data Control_: HE offers a vision where individuals can share encrypted data with companies, retaining privacy and control over their raw information.
+  7. _Regulatory Evolution_: as HE matures, we can anticipate global standards and best practices, balancing innovation with data protection.
+* Source: https://medium.com/@patrykbochenek/empowering-collaboration-ensuring-privacy-the-future-of-ai-training-with-homomorphic-encryption-f8df32c538c
