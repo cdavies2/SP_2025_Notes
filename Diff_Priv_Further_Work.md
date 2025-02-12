@@ -115,4 +115,77 @@
 * Source: https://arxiv.org/pdf/2412.11378
 
 # FinGPT-HPC: Efficient Pretraining and Finetuning Large Language Models for Financial Applications with High-Performance Computing
-* 
+* LLMs have a large number of parameters, and the finetuning process could still consume hundreds of gigabytes of GPU memory. Over 99% of said parameters come from the linear layers of the transformer structure, where computation workload and memory footprints grow quadratically with dimensions (EX: layer width). The model size and training time of Llama2-13B is about twice that of Llama2-7B.
+## Challenges
+* The pretraining dataset of many LLMs is too large to fit into GPU or CPU memory. During the training process, data is loaded into GPU memory from the disk, which is time intensive.
+* LLMs require large GPU memory during both training and inference stages
+* When using the model-parallel method to pretrain an LLM across multiple GPUs, these GPUs remain under low utilization.
+* LoRA is a parameter-efficient finetuning method, utilizing low-rank structure to reduce the redundancy of the linear layers in the transformer structure.
+* Quantized LoRA (QLoRA) converts the precision of parameters from half-precision (16-bit) into INT8 (8-bit) or INT4 (4-bit), which can reduce GPU memory consumption.
+* This method for pretraining and finetuning LLMs for financial applications with high-performance computing has two parts...
+  1. Pretrain a low-rank LLM on a general dataset and obtain a general LLM
+  2. Finetune the LLM on domain-specific datasets by freezing the pretrained weights and adding a low-rank version on a parallel path.
+* The low-rank structure and quantization technique is employed in the linear layers of the transformer structure, leading to a substantial reduction in the number of trainable parameters, reducing GPU use, memory, and training time.
+* A recomputing technique reduces the peak number of intermediate variables so the GPU memory footprint of pretraining and finetuning LLMs are greatly reduced. Pretraining is performed across multiple GPUs
+* For pretraining GPT2-1.5B, the method resulted in a speedup of 1.3x, and a compression ratio of 2.64x without accuracy drop.
+* For finetuning Llama2-13B, the method resulted in a 6.3% accuracy inctrase in general tasks and 24.0% in financial tasks.
+## Large Language Models
+* The transformer structure uses the self-attention mechanism and allows the model to process sequential data efficiently. It is the base model of ChatGPT, which was trained using instruction finetuning.
+* The scaling law of LLMs states that model performance scales as a power-law with model size, dataset size, and the amount of compute used for pretraining.
+## Low-Rank Structure
+* The Low-Rank adaptation (LoRA) method reduced the number of trainable parameters by a factor of 10,000 times, but still retained a full-size pretrained LLM for inference.
+* Tensor layers are suited for computing on GPUs and have the low-rank feature.
+## Quantization Technique
+* Quantization maps high-precision data to low-precision data, which can effectively reduce the memory consumption. Outliers make activisions difficult to quantize and have less impact on the weights. Accuracy loss can be reduced via reducing the effect of outliers and improving the rounding strategies.
+
+## Background on LLMs and Low-Rank Structure
+* Most existing LLMs are based on the decoder-only transformer structure. There are 3 parts....
+ * An embedded layer that converts the input x to a latent vector x^e
+ * There are N decoder layers, each one having two modules: the multi-head self attention module and the feed-forward network module. The self-attention module transforms x^e to x^o and the feed-forward network module transforms x^o to x^d. The inputs x^e and x^o are skip-connected to the output x^o and x^d, respectively. A normalization layer normalizes x^e and x^o.
+ * There is an output layer W^H that converts the latent representations x^d to y. Then, the softmax function transforms y to a vector of probabilities, where each entry is the probability of picking the corresponding token.
+* Linear layers are major building blocks of the transformer network. An input sample x is multiplied by a weight matrix W, and the output y can be represented as...
+ * y = Wx
+* Linear layers are highly redundant, meaning W can be replaced with two sublinear layers A and B, so y becomes...
+ * y = BAx
+* The layer size is reduced from n^2 to 2nr, as is the number of multiplications.
+## Challenges in Training and Inference
+* Pretraining has three main challenges
+ * Large scale dataset is needed to pretrain LLMs. For example, the dataset used to pretrain Llama2 is 4.7TB, requiring large amounts of GPU and CPU memory.
+ * The memory footprint of pretraining and finetuning exceeds the GPU memory capacity. The GPU memory footprint can be classified into four parts. For pretraining Llama2-7B with batch size 16, the GPU memory footprint has a size of 1664 GB.
+ * In the model-parallel method, an LLM is split over multiple GPUs. During the pretraining, the forward pass is computed layer by layer and only one GPU is working at a time. When splitting an LLM into N GPUs, each has a relatively low utilization of 1/N.
+* Inference is when the trained LLM is loaded into the GPU. Using a standard tokenizer, the input text is processed into a sequence of tokens, the input is embedded, for h heads in multi-head self-attention module, there is an attention function to calculate attention score and head softmax. The heads are concatenated, and the last column of output is the predicted token.
+* Challenges of the inference stage include....
+ * Limited memory capacity poses a challenge in using LLMs for various applications, such as inference on mobile phones (EX: Llama2 is too large for that)
+ * Most parameters of the transformer structure come from the linear layers. In the inference stage, each parameter requires multiplication and addition. For generative LLM, each generated token needs an inference, that token is added to the end of input tokens as a new input for the next inference (if the input has 100 tokens and the LLM generates 100 tokens, there are 100 times inference processes, these processes have 199 tokens as input, so the whole inference stage has 14950 tokens to be computed). This is not easily accomplished with a mobile phone's computational power.
+
+## Pretraining Methods with Low-Rank Structure
+* Pretraining an LLM has high costs and long training time, and low-rank structure can reduce the number of parameters. Using low-rank structure, pretraining involves....
+  1. Replace the linear layer of the transformer with two sub-linear layers, which use a hidden layer with a small width.
+  2. Decompose the pretrained weight matrix into low-rank matrices, then use matrices A and B to initialize a low-rank LLM.
+  3. Adding two narrow linear layers to the parallel path of the pretrained linear layer, obtain new linear layers. The pretrained linear W are frozen, and the pretrained LLM only has the low-rank matrices.
+## Optimization for the Pretraining Stage
+* Intermediate variables are generated in the forward pass, used in backward pass, and then released.
+* Some intermediate variables have more GPU memory consumption. This is because other variables are in the decoder layer, which has 32 layers, and some variables have the same size for each head (again, there are 32 for each decoder layer).
+* By avoiding storing intermediate variables and recomputing them when needed, the GPU memory consumption can be significantly reduced, at the cost of more computations. The process of this method is...
+  1. In forward pass, only the input x^e is stored
+  2. In backward pass, the GPU recomputes other variables using x^e for a decoder layer
+  3. Calculating the gradients of parameters in this decoder layer, the variables are deleted after obtaining gradients
+  4. Repeat steps 1-2 under all decoder layers calculate the gradients
+  5. Obtaining all gradients, and the parameters are updated.
+* For pretraining an LLM on N GPUs, the model-parallel method loads the parameters on different GPUs, the computing is performed sequentially on said GPUs, and each GPU has a utilization of 1/N. In the pipeline model-parallel method, the input data is split into M >=1 minibatches, which are input into GPU-0 to GPU-3 sequentially and backward pass is performed in a reverse order.
+* Decomposing weight at different linear layers is independent. In a single GPU, the decomposition of weights is batched in different layers, but on different GPUs, we perform the decomposition of different weight matrices, like W^Q and W^V in parallel.
+* Source: https://arxiv.org/pdf/2402.13533
+
+# ST-DPGAN: A Privacy-Preserving Framework for Spatiotemporal Data Generation
+* Spatiotemporal data encompasses sensitive information, like how social media data often contains a person's browsing history, traveling details, and social network changes. This raises significant privacy concerns regarding public availability and dissemination of spatiotemporal data.
+* Many regions have new data protection regulations because of privacy concerns. As such, it is important to find a de-identification method when we want o publish more fine-grained spatiotemporal datasets.
+* To enable large-scale spatiotemporal data analysis, we have to provide a privace guarantee. GAN (generative adversarial network) has profound potential in spatiotemporal data generation.
+* Some challenges in generating spatiotemporal data using GANs with differential privacy include...
+  1. Spatiotemporal data are heteogenous. The generated spatial information and temporal information are hard to align into spatiotemporal data as it is demonstrated that spatial and temporal features belong to different Euclidean spaces.
+  2. Due to the space-time duality property of spatiotemporal data, generating spatiotemporal data samples with a single variable drawn from a certain distribution is difficult.
+  3. Simply adding noises to each spatial location or temporal point cannot guarantee a privacy-preserving dataset for training usage because it does not consider spatial correlation and temporal correlation, and the overall data distribution cannot be maintained.
+* This new framework offers two main strategies for effectively extracting the distribution of spatiotemporal data and measuring privacy loss during the training process..
+  1. Adopt the Transposed One-Dimensional Convulution layer (transConv1D) to generate fake data samples from Gaussian noises, which can transform single-channel Gaussian noises into spatiotemporal data.
+  2. Simplify existing spatiotemporal graph convolutional networks and introduce temporal attention block and spatial attention block, which are designed to model spatial and temporal dependencies, enabling simultaneous extraction of spatiotemporal features from graph-based time series data and facilitating easier convergence during the training process.
+ ## Differential Private SGD
+ * Source: https://arxiv.org/pdf/2406.03404
