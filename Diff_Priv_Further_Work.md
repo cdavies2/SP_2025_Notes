@@ -83,5 +83,36 @@
 * XBRL is a standardized format designed for exchanging financial information. For this, tagging and extraction are focused on.
 
  ## Datasets: Sentiment Analysis
- * 
+ * _Financial Phrasebank_: contains sentences extracted from financial news and reports, which are annotated with sentiment labels.
+ * _Financial Question-Answering Sentiment Analysis_: same labels as FPB, contains microblog headlines and financial news
+ * _Twitter Financial News Sentiment_: comprises annotated tweets related to financial news labeled with sentiment categories.
+ * _News with GPT Instruction_: comprises samples with seven labels ranging from "strong negative" to "strong positive", only three labels are used for simplicity
+ * Headline classification dataset categorizes headlines into two classes, "yes" and "no", based on predefined questions
+ * Named entity recognition (NER) annotates one entity per sentence (classified as a location, person, or organization)
+ * For XBRL tagging, the FiNER dataset was processed so each question comprises of the sentence and one highlighted entity and the answer includes the correct tag.
+ * The XBRL extraction dataset comprises questions and answers derived from XBRL filings from 2019 to 2023 for Dow Jones 30 companies. Tag and value extraction were performed on XBRL text segments.
+
+ ## Implementation Details
+ * For sentiment analysis, headline classification, named entity recognition, and XBRL Tagging, single-task fine-tuning was employed. Llama 3.1 8B with a batch size of 16 and Llama 3.1 70B with a batch size of 4 were used
+ * For XBRL tag and value extraction, multi-task fine-tuning was adopted. Llama 3.1 8B with a batch size of 2 was used.
+ * 8-bit quantized inference was used for all evaluations for consistency's sake.
+## Performance Metrics
+ * _Accuracy_: ratio of correct answers to total queries
+ * _Weighted F1 Score_: used for classification tasks, calculated as the weighted average of F1 scores for each class, with weights proportional to the number of instances in each class.
+### Finetuning and Inference Performance
+* _Batch size_: batch size per GPU during finetuning
+* _GPU memory usage_: sum of the amount of GPU memory used for all GPUs during training
+* _GPU hours_: the product of total training time and number of GPUs used
+* _Adapter size_: the size of the LoRA adapter file
+* _Inference speed_: the number of seconds to process an example
+
+## Results and Analysis
+* The finetuned Llama 3.1 8B demonstrates noticeable improvements in accuracy compared to its based model and even surpasses results of the Llama 3.1 70B base model
+* Even with lower quantization and rank 4, the finetuned Llama 3.1 8B model achieves comparable performance to its 8-bit, rank 8 counterpart.
+* The fine-tuned 70B model demonstrates practical usability with 4-bit quantization, showcasing the feasibility of deploying larger LLMs for complex financial tasks in resource-constrained environments.
+ ## Conclusion
+ * Finetuning Llama 3.1 8B and 70B models on commodity GPUs resulted in up to 48% improvements in accuracy compared to based models on average across all tasks. This could be achieved with only four GPUs and less than 20 hours of training times per task
 * Source: https://arxiv.org/pdf/2412.11378
+
+# FinGPT-HPC: Efficient Pretraining and Finetuning Large Language Models for Financial Applications with High-Performance Computing
+* 
