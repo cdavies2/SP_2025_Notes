@@ -187,5 +187,62 @@
 * This new framework offers two main strategies for effectively extracting the distribution of spatiotemporal data and measuring privacy loss during the training process..
   1. Adopt the Transposed One-Dimensional Convulution layer (transConv1D) to generate fake data samples from Gaussian noises, which can transform single-channel Gaussian noises into spatiotemporal data.
   2. Simplify existing spatiotemporal graph convolutional networks and introduce temporal attention block and spatial attention block, which are designed to model spatial and temporal dependencies, enabling simultaneous extraction of spatiotemporal features from graph-based time series data and facilitating easier convergence during the training process.
- ## Differential Private SGD
- * Source: https://arxiv.org/pdf/2406.03404
+## Differential Private SGD
+ * Differential privacy is often used to secure training data for LLMs.
+ * The Differential Preserving SGD is the first training mechanism that uses Differential Preserving in the training process of deep learning by clipping the training weights and adding noise to them. Most works related to this mechaism focus on the general training procedure and ignore the differences in various kinds of data
+## Private Aggregation of Teacher Ensembles (PATE)
+* PATE uses several teacher models, which are trained on different partitions of the privacy data, and a student model, which is trained on unlabeled public data. The label of the public data is obtained by querying the trained teacher models.
+* Issue: in many real applications (EX: social analysis) public data isn't available
+* In this application, the model generates spatiotemporal data where the public spatial-temporal dataset is difficult to obtain.
+
+## Preliminary
+* Differential privacy is a formal mathematical framework that enables the release of aggregate statistical information about a dataset while provably bounding the privacy risk to individual data subjects. It prevents membership inference attacks (altering one sample in the dataset now does not signidcantly change the distribution of one function's output).
+* Differential Private SGD algorithms require you....
+ * Take a random sample L with sampling probability L/N, where N is the size of the input data
+ * For each i in l, calculate the gradient, where L(0, xi) denotes the loss function and xi is a training sample
+ * Clip the gradient as  g-(xi)<- g(xi)/max(1, (∥g(xi)∥2)/C), where C is a clipping bound
+ * The Gaussian noise N(0, σ2C2I) can then be added to the clipping gradient
+ * Update the model and calculate the privacy loss until the privacy budget is exhausted
+
+## Methodology
+* The ST-DPGAN (Spatiotemporal Differential-Privacy Generative Adversarial Network) was inspired by the WGAN framework, incorporating a traditional GAN structure consisting of a generator and a discriminator.
+* To generate the desired privacy-preservinf spatiotemporal data, the heterogenous and space-time duality of spatiotemporal data must be overcome.
+* ST-DPGAN is an end-to-end framework that accepts spatiotemporal data as input, and the output is privacy protected data.
+* The framework's generator incorporates a transConv1d module, which transforms 1-D Gaussian noise data into 2-D spatiotemporal data, therby improving the synthesis results.
+* The framework's discrimiator replaces the conventional three-block convolutional structure with a two-block attention structure, which aligns spatial and temporal information within the data more effectively.
+### Generator
+* In a traditional GAN framework, the generator learns an approximation of the real data distribution by mapping random noise to data samples. However, spatiotemporal data is not as easily reconstructed, so the transCov1d module remedies this.
+* At each temporal data location, data is multiplied by a kernel initialized with a Gaussian distribution to generate new sequential data. All generated data is aggregated to form the final output of the transConv1d module.
+* The filter parameter of the transConv1d module is set to the size of the spatial locations (N) and kernel size is set to length of the time series (T). The initial random data with dimensions of 1 * N can be processed into dimensions of T * N, enableing the model to capture temporal variations in generated data effectively.
+### Discriminator
+* The conventional pipeline for discriminating spatiotemporal data, spatiotemporal Graph Convulutional Network (STGCN) typically employs three convulutional blocks to predict the temporal evolution of spatiotemporal data.
+* The above is not suited to a GAN framework due to its heavy three-layer spatiotemporal structure, which can lead to computational issues like gradient explosion and vanishing.
+* The integration of two self-attention blocks within the discriminator could enhance the basic model by....
+ * Establishing relationships between nodes by attending to every other node simultaneously
+ * The temporal self-attention block links each node by attending to itself across all timestamps.
+* Feature extraction involves...
+ * Input data is transformed through the normalized Laplacian matrix
+ * Input is project to obtain query and key matrices. The value matrix is obtained through ID convultion with a kernel size 1.
+ * Raw attention scores are passed through a softmax function and multiplied with Vs to produce the new representation.
+ * The output from the two self-attention blocks is multiplied by scalars initialized with a value of 0 and added back to the basic features. This ensures the model begins with fundamental features derived from the graph properties and gradually learns other underlying features during training,
+* For the optimizer in the presence of differential privacy, DPSGD is used in the discriminator to add random noise in the gradients of trainable parameters through back propagation
+### Model Summary
+* ST-DPGAN is an end-to-end GAN-based framework to generate spatiotemporal data with quantitative privacy-preserving guaranteed by the differential privacy mechanism. The generated data could be used for regression and deep learning tasks.
+* The TransConv1D focuses on transposing the spatiotemporal relation from one-dimensional Gaussian noise, which controls the initial distribution of the simulation dataset
+* The spatial and temporal blocks help extract underlying spatial and temporal relations among nodes, which further boosts the performance of the model in downstream tasks.
+
+## Experiments
+* The three publicly available real-world datasets used were...
+ * Melbourne parkign dataset-contains sensor data collected through 31 parking areas in Melbourne in 2017
+ * METR-LA traffic dataset-consists of time-series data for traffic speed and volume measurements collected at different locations in Los Angeles over several months
+ * Windmill energy dataset-hourly energy output of windmills in a European country for more than two years.
+* Two methods were proposed...
+ * With ST-DPGAN, the transConv1D operation was incorporated in the generator and two spatiotemporal blocks were utilized from the discriminator side
+ * With ST-DPGAN-Attn, the convultion layer is replaced within the spatiotemporal block with an attention block.
+* DPGAN is a baseline for data generation under a privacy setting, and WGAN is a baseline for data generation without differential privacy and also an upper bound for DPGAN. These do not contain the transConv1D module, graph embedding, or two-layer spatiotemporal attention blocks
+* Model performance was evaluated using Mean Square Error (MSE) and Mean Absolute Error (MAE) as downstream tasks are all regressions.
+*  ϵ is used to measure upper bounds of privacy loss. A smaller privacy budget usually exhibits a better privacy guarantee over the data, while a higher value potentially brings more risks in privacy leakage.
+*  A Wasserstein GAN (WGAN) was trained to compare its performance with the proposed method.
+*  In most cases, the data generated by ST-DPGAN demonstrate lower loss and outperform the WGAN in regression tasks. Incoroporating the attention mechanism in ST-DPGAN-Attn further enhances the data quality by leveraging spatial and temporal relationships among nodes.
+*  With the same privacy budgets, ST-DPGAN and ST-DPGAN-Attn are more effective than DPGAN in capturing and recovering spatiotemporal information. This is maintained across different privacy budgets.
+* Source: https://arxiv.org/pdf/2406.03404
