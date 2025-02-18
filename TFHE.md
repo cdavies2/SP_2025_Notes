@@ -88,3 +88,4 @@
         Bl
  * GGSW -> (M)
         S, σ
+* Source: https://www.zama.ai/post/tfhe-deep-dive-part-1
