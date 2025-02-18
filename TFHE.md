@@ -89,3 +89,19 @@
  * GGSW -> (M)
         S, σ
 * Source: https://www.zama.ai/post/tfhe-deep-dive-part-1
+
+# Encodings and Linear Leveled Operations
+* GLWE ciphertexts are the main focus.
+* Encodings are an overlayer of the encryption and very useful in FHE.
+## GLWE Homomorphic Addition
+* Let p and q be two positive integers, such that p<=q and △ = q/p.
+* p and q are either chosen to be powers of 2 or rounded at the moment of encoding
+* A GLWE ciphertext encrypting a message M ∈ Rp under the secret key S=(S0,..., Sk-1) ∈ R^k is a tuple where the elements Ai for i ∈|0...k-1| are sampled uniformly random
+                k-1
+from Rq and B = Σ Ai * Si + △M + E∈Rq has coefficients sampled from a Gaussian dist Xσ
+                i=0
+*  If another GLWE ciphertext encrypts a different message under the same key, we can add every component of the two ciphertexts (in Rq) and the result will be a new GLWE ciphertext encrypting the sum M + M' ∈ Rp under the same secret key s, with noise that grew a little bit (additively with respect to the original noises in C and C') and that we will estimate with standard deviation σ'
+*  Homomorphic addition between cyphertexts is noted with "+"
+### Toy Example
+
+* Source: https://www.zama.ai/post/tfhe-deep-dive-part-2
