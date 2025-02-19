@@ -103,5 +103,139 @@ from Rq and B = Σ Ai * Si + △M + E∈Rq has coefficients sampled from a Gauss
 *  If another GLWE ciphertext encrypts a different message under the same key, we can add every component of the two ciphertexts (in Rq) and the result will be a new GLWE ciphertext encrypting the sum M + M' ∈ Rp under the same secret key s, with noise that grew a little bit (additively with respect to the original noises in C and C') and that we will estimate with standard deviation σ'
 *  Homomorphic addition between cyphertexts is noted with "+"
 ### Toy Example
+* Using q = 64, p = 4 so △ = 64/4=16, N=4 and k=2, sample the secret key with uniform binary distribution as k polynomials of degree smaller than N
+ * ->S = (S0, S1) = (X + X^2, 1+X^2 + X^3) ∈R^2
+* Encrypt two messages:
+ * M = -2 + X-X^3 ∈ Rp
+ * M' = X + X^2 - 2X^3
+* Their addition equals....
+ * M(+) = -2 -2X + X^2 + X^3 ∈ Rp
+* Choose A, E, A', E' (the randomness for the first and second messages), compute the bodies (B and B'), and after performing polynomial operations modulo X^N +1 (X^4 +1) and modulo q (64), we get the encryptions C and C'
+* To perform _homomorphic addition_, add in Rq the components term wise:
+ * A0^(+) = A0 + A'0 = 17-2X-24X^2 + 9X^3 - 8 + 15X + 3X^2 - 30X^3 - 9 + 13X - 21X^2 -21X^3 ∈Rq
+ * A1^(+) = A1 + A'1 = -14 - X^2 + 21X^3 + 23 - 16X + 27X^2 - 4X^3 = 9 - 16X + 26X^2 + 17X^3 ∈ Rq
+ * B(+) = B + B' = -31 + 5X - 21X^2 + 30X^3 - 25 + 12X^2 - 12X^3 = 8 + 5X - 9X^2 + 18X^3 ∈ Rq
+* Therefore:
+ * C^(+) = A0^(+), A1^(+), B^(+)) = (9 + 13X - 21X^2 - 21X^3, 9 - 16X + 26X^2 + 17X^3, 8 + 5X - 9X^2 + 18X^3) ∈ R^3q
+                       k-1
+* Decryption ( B^(+) - Σ Ai^(+) * Si = 31 - 30X + 15X^2 + 16X^3 ∈ Rq
+                       i=0
+* Produces M^(+)
 
+## GLWE Homomorphic Multiplication by a Constant
+*  Let's consider a GLWE ciphertext encrypting a message M ∈ Rp under secret key ->S = (S0,...,Sk-1)∈R^k
+*  We can multiply a small constant polynomial /\ to every component of the ciphertext and the result will be a new GLWE ciphertext encrypting the product  /\ * M ∈ Rp under the same key ->S, with noise that grew proportionally with respect to the size of the coefficients of /\ and estimated with standard deviation σ''
+*  Homomorphic multiplication is noted with the symbol "."
+*  Homomorphic mutliplication can also be performed with a small integer
+### Toy Example
+* Using the same message M as the previous example, choose a small constant polynomial (/\ = -1 + 2X^2 + X^3 ∈ R).
+* The multiplication between M and /\ is equal to...
+ * M^(.) = 1 + X + X^2 + X^3 ∈ Rp
+* To perform the homomorphic multiplication by /\, multiply in Rq the components of the ciphertext C times /\.
+*  C(.)=(A0(.), A1(.), B(.))= (-31 + 8X - 15X^2 + 4X^3, 16 + 23X + 16X^2 + 29X^3, 4 + 20X - 7X^2 + 13X^3) ∈ R^3q
+
+## GLWE Encodings
+* An _encoding_ is the way we decide to represent a message inside the ciphertext, which impacts how homomorphic operations are performed
+### Encoding Integers in the MSB
+* In TFHE, the noise is added in the LSB (least significant bits), so an encoding must position the message in the MSB (most significant bits)
+* Remember that for LWE ciphertext, the encoded quantity is a plaintext, the message is a cleartext, small noise is sampled from a Gaussian distribution Xσ.
+* Encoding the error as a positive value in the LSB is pratical to make _leveled operations_ (additions and multiplications by constants) _modulo_ p.
+* If you add two LWE ciphertexts encrypting two messages encoded in the MSB with the same △, a new ciphertext with more noise results.
+### Encoding Integers in the MSB with Padding Bits
+* This encoding is largely used in TFHE and consists in encrypting the message in the MSB, but to add some bits of padding (EX: bits set to zero) in the MSB part to "provide space" for leveled operations (like homomorphic addition and multiplication by constants).
+* "Empty space" between messages is called _padding_.
+* This encoding is practical to make _exact leveled operations_ (additions and multiplications by constants). If you add two LWE ciphertexts encrypting two messages m1 and m2 encoded in the MSB with the same △ and use 2 bits of padding, the result will be a new LWE encrypting m1+m2 in the MSB with 1 bit of padding that was "consumed" after the addition, along with increased noise.
+### Encoding of Reals
+* In this, the message and the error become a single thing. Message m occupies the entire space Zq, but the LSB are perturbed by an error e, which "approximates" the information. There is no way to distinguish the exact value of m because there is no △ value helping do the separation with the error part.
+* This encoding method is practical to evaluate _approximate leveled operations_ (additions and multiplications by constants) _up to a certain precision_
+* For decryption, the first step is the same, but the second is replaced by a rounding or the addition of a new random error in the LSB.
+* "T" in TFHE stands for "Torus", a circular mathematical structure that can help us visualize encodings
 * Source: https://www.zama.ai/post/tfhe-deep-dive-part-2
+
+# Key Switching and Leveled Multiplications
+## Homomorphic Multiplication by a Large Constant
+* If we multiply every component of ciphertext by a large polynomial (in Rq), noise grows proportionally with respect to the polynomial's size, so the noise grows too much and compromises the result.
+* To solve the noise problem, take the large constant and decompose it into a _small base_ B, where the decomposed small elements are in ZB. These should be chosen as powers of two.
+* Once we have the small decomposition elements, we should be able to perform the multiplication with the ciphertext and have a small impact on noise. However, to obtain the product of the polynomial and the message, we must recompose the polynomial
+* To recompose, multiply the decomposed elements by the GLev encryption of M (which encrypts M times different powers of the decomposition base).
+* An inner-product-like operation multiplies every element of the decomposition times the corresponding element of the GLev and adds them all together.
+* The issue is GLWE in output no longer has △, so the new message might occupy the entire space. As such, this method is used as a building block for more complex operations, never on its own.
+
+## Approximate Decomposition
+* Approximate decomposition decomposes up to a fixed precision, meaning we do a rounding in the LSB before decomposing; if the decomposition parameters are chosen properly, this does not impact the correctness of the computations.
+
+## Multiplication by a Large Polynomial
+* The polynomial is decomposed into smaller polynomials and you then perform a polynomial inner product with the GLev.
+* This operation is the main building block operation for key switching and homomorphic multiplication.
+### Toy Example
+* This displays how to decompose a large polynomial using approximate signed decomposition, which is what is used in practice.
+* Let's choose a base for the decomposition B = 4 and l = 2, so B^l = 16. This means we will decompose the 4 MSB of each coefficient, but first they need to be rounded. Write them in binary decomposition first (MSB left, LSB right) and perform the rounding of the 2 LSB
+ * /\0 = 28->(0,1,1,1,0,0) which becomes /\'0->(0,1,1,1)
+ * /\1 = -5->(1,1,1,0,1,1) which becomes /\'1->(1,1,1,)
+ * /\2 = -30->(1,0,0,0,1,0) which becomes /\'2 ->(1,0,0,1)
+ * /\3 = 17 ->(0,1,0,0,0,1) which becomes /\'3 ->(0,1,0,0)
+* For decomposition, start from the LSB and because the base is 4, extract 2 bits at every round, and we want coefficients in {-2, -1, 0, 1}. If we have 1,1, corresponding to 3, subtract 4 to the block and add +4 to the next block, like a carry.
+* In /\' -> (0, 1, 1, 1):
+ * The two LSB are (1,1), corresponding to 3, subtract 4 and get -1 at the first element of the decomposition
+ * The next block is (0,1), add back the subtracted 4 and get 1,0, corresponding to 2. Once again subtract 4, getting -2 as the second element, and throwing the +4 out
+* In /\'1 -> (1, 1, 1, 1)
+ * (1, 1) corresponds to 3, subtract 4 and get -1
+ * Add 4 to (1, 1) and get (0,0), which corresponds to 0
+* In /\'2 ->(1, 0, 0, 1)
+ *  (0, 1) corresponds to 1, our first element
+ *  (1, 0) corresponds to 2, subtract 4 and get -2
+* In /\'3 -> (0, 1, 0, 0):
+ * (0, 0) corresponds to 0
+ * (0, 1) corresponds to 1
+* We can write the decomposed polynomials as...
+ * /\(1) = -2 -2X^2 + X^3
+ * /\(2) = -1 -X + X^2x
+* The coefficients of /\(2) are the first elements of the decomposition, while the coefficients of /\(1) are the second elements of the decomposition. These polynomials can be used in the inner products with the GLev ciphertexts.
+
+## Key Switching
+* Ciphertexts are in fact large vectors, polynomials, vectors of polynomials, composed by integers modulo q, that look uniformly random
+* Compining decomposition and inner products with GLev ciphertexts is useful for defining more complex operations and multiplications between ciphertexts.
+* _Key Switching_ is the first operation, and its a homomorphic operation largely used in all the (Ring) LWE-based schemes and is used to switch the secret key to a new one
+* To switch a key, _cancel_ the secret key ->S and _re-encrypt_ under a new secret key ->S', and try to do so homomorphically.
+* The ciphertext will be the GLev encryption of Si and the large constant will be Ai that, by construction, is a uniformly random polynomial in Rq.
+* In practice, the GLWE encryption involves the trivial GLWE, which subtracts the GLWE encryption of AiSi (involving decomposition).
+* This corresponds to the homomorphic evaluation of the first step of the GLWE decryption, but since we don't evaluate the second step (re-scaling by △ and rounding) we do not reduce the noise. The noise is larger than that of the input ciphertext.
+* Some types of key switching include...
+ * Key switching from one LWE to one LWE
+ * Key switching from one RLWE to one RLWE
+ * Key switching from one LWE to one RLWE, putting the message encrypted in the LWE into one of the coefficients of the RLWE ciphertext
+ * Key switching from many LWE to one RLWE, packing the messages encrypted in the many LWE inputs into the RLWE ciphertext.
+* Key switching can also be used to switch parameters.
+
+## External Product
+* Our goal is to homomorphically multiply two ciphertexts so the result is an encryption of the product of messages.
+* We take one of the two ciphertexts as a GLWE (the ciphertext we will decompose) and the other will be a list of GLev ciphertexts. This time we want to mask (like in key switching) and mask to be multiplied by the GLev.
+* For an operation to multiply two ciphertexts (a GLWE and a GGSW) and return a new GLWE ciphertext, the inputs are
+ * A GLWE ciphertext encrypting a message M1∈Rp under the secret key ->S, where the elements Ai for i ∈[0..k-1] are sampled uniformly random from Rq, and B has coefficients sampled from a Gaussian distribution Xσ
+ * A GGSW ciphertext encrypting a message M2∈Rp under the same secret key, multiplied with GLev
+ * The external product is noted with the symbol . and is computed as seen above.
+ * The noise in the result is larger than that in the input
+
+## External Product vs. Key Switching
+* The external product is like a key switching with an additional element to the key switching key (the Ck GLev ciphertext)
+* The external product is like a key switching where we do not switch the key. In the GGSW ciphertext, the secret key used for encryption and the one used inside the GLev ciphertexts are the same
+* An external product that takes as input a GGSW ciphertext, that uses a different secret key for encryption and used the same secret key as the GLWE ciphertext inside the encryption, is called _functional key switching_. It applies a function (multiplication by an encrypted constant) and switches the key at the same time.
+
+## Internal Product
+* There is no internal product between GLWE ciphertexts that can be done in a straight way. There is however an internal product that can be defined from the external product
+* A GGSW ciphertext is a list of GLev ciphertexts, and wach GLev is a list of GLWE ciphertexts.
+* We can define the internal product as a list of independent external products between one of the GGSW ciphertexts in input and all the GLWE ciphertexts composing GGSW input. The result of all these external products will be the GLWE ciphertexts composing the GGSW output.
+
+## Internal Product vs External Product
+* The external product is more efficient than the internal product, but it is not composable, so the result of an internal product can be used as input of another internal product, but the result of an external product (GLWE ciphertext) can be used only in one of two inputs of another external product (the GLWE one) but not on the other (the GGSW one). If we use external products, the GGSW is fresh and encrypted
+
+## CMux
+* The CMux operation is the homomorphic version of a multiplexer (Mux) gate.
+* A Mux gate is an if condition; it takes three inputs, a selector, and two options, and depending on the value of the selector, it makes a choice between the options.
+* It is evaluated in clear by computing b * (d1-d0) + d0 = db
+* To evaluate it homomorphically, encrypt b as a GGSW ciphertext and d0 and d1 as GLWE ciphertexts. Then the multiplication in the cleartext formula is evaluated as an external product, while other operations (addition and subtraction) are evaluated as homomorphic additions and subtracts, encrypting db as a GLWE ciphertext.
+* Source: https://www.zama.ai/post/tfhe-deep-dive-part-3
+
+# Programmable Bootstrapping
+*
+* Source: https://www.zama.ai/post/tfhe-deep-dive-part-4
