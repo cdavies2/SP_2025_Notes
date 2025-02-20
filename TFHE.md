@@ -237,5 +237,121 @@ from Rq and B = Σ Ai * Si + △M + E∈Rq has coefficients sampled from a Gauss
 * Source: https://www.zama.ai/post/tfhe-deep-dive-part-3
 
 # Programmable Bootstrapping
-*
+* Bootstrapping requires multiple extra building blocks: modulus switching, sample extraction, and blind rotation.
+## Modulus Switching
+* Modulus switching is mainly used on LWE ciphertexts, and involves switching the ciphertext modulus to a new one.
+* Remember, an LWE ciphertext encrypting a message m∈Z^n. Then, let's consider another positive integer w: the modulus switching from q to w is the operation that takes all the components of the LWE ciphertext and switches their modulus from q to w as follows:
+ * ~ai = [ (w * ai )/q] ∈Zw
+* The result of this operation is a new LWE ciphertext
+ * ~c = (~a0...., ~an-1, ~an=~b) ∈ LWEsσ(~△)⊆Zw^n+1
+* In TFHE we generally switch to a smaller modulus w equal to a power of 2 and such that p<w<q, so △ = (w*△/q) =w/p. If w isn't a power of 2, rounding is applied
+* This operation keeps the log2(w) MSB of the original ciphertext. However, use this carefully, as noise grows and gets closer to the message.
+### Toy Example
+* q=64, p = 4, △=16, n=4
+* The initial encryption is...
+ * c = (a0, a1, a2, a3, b) = (-25, 12, -3, 7, 26) ∈Zq^n+1
+* Perform modulus switching by choosing w=32
+ * ~c = (~a0, ~a1, ~a2, ~a3, ~b) = (-13, 6, -2, 4, 13) ∈Zw^n+1
+ * The base is reduced from 64 to 32 so all values are halved (rounding up)
+* 32/4=8, so the new scaling factor is ~△=8. To decrypt the new ciphertext, start by computing...
+      n-1
+ * ~b-Σ ~ai*si= 9 ∈Zq
+      i=0
+* Once you rescale and round with the new △, you get [9/8]=1∈Zp, the originally encrypted message
+
+## Sample Extraction
+* A sample extraction is an operation that takes a GLWE ciphertext as input, encrypts a polynomial message, and _extracts_ the encryption of one of the coefficients of the message as a LWE ciphertext.
+* This operation does not increase noise and simply "copy-pastes" some of the coefficients of the GLWE ciphertext into output LWE ciphertext.
+* Imagine we want to extract the h-th coefficient of encrypted message M, with 0<h<N. The resulting LWE ciphertext will have n=kN and will be encrpyted under the extracted secret key ->s, equal to a copy-paste of the coefficients of the GLWE secret key.
+* We then build the LWE ciphertext c=(a0,....an-1, b)∈Zq^n+1 by simply copying some of the coefficients of the GLWE as follows:
+* aN*i+j <- ai,h-j    for 0<=i<k, 0<=j<=h
+* aN*i+j <- -ai,h-j+N for 0<=i<k, h+1<=j<N
+* b <- bh
+### Toy Example
+* We'll use a generic RLWE ciphertext (k=1) as a toy example, and choose N=4 for simplicity. A RLWE ciphertext encrypting a message M=3
+                                                     Σ mjX^j ∈ Rp
+                                                     j=0
+Under a secret key S=3
+                     Σ sjX^j ∈ R^k 
+                     j=0
+* The result is a tuple where B= A * S + △M + E ∈ Rq
+* To understand sample extraction, try to observe what happens during the first step of decryption for this ciphertext. Computations are done modulo X^4 + 1, so X^4 = -1
+* B - A * S = (b0+b1X+b2X^2+b3X^3) - (a0+a1X+a2X^2+a3X^3) * (s0+s1X+s2X^2+s3X^3)
+* = (b0 - a0s0 + a1s3 +a2s2 + a3s1) + (b1-a0s1-a1s0 +a2s3 + a3s2) * X                    + (b2 - a0s2 - a1s1 - a2s0 + a3s3) * X^2 + (b3 - a0s3 - a1s2 - a2s1 - a3s0) * X^3
+* = (b0 - a0s0 + a3s1 + a2s2 + a1s3) + (b1 - a1s0 - a0s1 + a3s2 +a2s3) * X               + (b2 - a2s0 - a1s1 - a0s2 + a3s3) + (b3 - a3s0 - a2s1 - a1s2 - a0s3) * X^3
+* //for the second bullet, just reorder elements in the sum, s increases in order
+* = (△m0 + e0) + (△m1 + e1) * X + (△m2 + e2) * X^2 + (△m3 + e3) * X^3
+* By computing (b0 - a0s0 + a3s1 + a2s2 + a1s3), followed by rescaling by △ and rounding, the coefficient m0 is decrypted, and the same is true for all coefficients.
+* We can build LWE ciphertexts encrypting all the coefficients of the RLWE input ciphertext separately, under the _extracted secret key_ ->s=(s0, s1, s2, s3) as follows
+ * (a0, -a3, -a2, -a1, bo) ∈ LWEsσ(△m0)⊆Zq^n+1
+ * (a1, a0, -a3, -a2, b1) ∈ LWEsσ(△m1)⊆Zq^n+1
+ * (a2, a1, a0, -a3, b2) ∈ LWEsσ(△m2)⊆Zq^n+1
+ * (a3, a2, a1, a0, b3) ∈ LWEsσ(△m3)⊆Zq^n+1
+
+ ## Blind Rotation
+ * Blind rotation realizes a _rotation_ of the coefficients of a polynomial in a blind way, meaning we will rotate the coefficients but the number of rotated position is encrypted.
+ * Rotating coefficients means we want to shift them towards the left (or right) and to do so, we multiply the polynomial by a monomial X^-π (or X^π) where 0<=π<N is the number of positions we want to rotate.
+ * Rotation can bring the coefficient that originally was in position π down to the constant coefficient position. Because said rotation is computed modulo X^N + 1, the coefficients from m0 to mπ-1 passed over with a minus sign.
+ * In TFHE with polynomials encrypted with GLWE ciphertexts, the rotation is performed simply by rotating all the components of the GLWE by multiplying them times X^-π. This operation does not increase noise.
+ * To make a blind rotation, the value π must also be encrypted. This is done iteratively using the CMux operation, which takes in two input GLWE ciphertexts encrypting the two options and a GGSW ciphertext encrypting the selection bit. The value of π will be used as the selection in our construction. Because π is an integer value, we must express it in its binary decomposition
+ * Let's take a generic monomial X^(-πj * 2^j) and try to understand how to perform the computation homomorphically. Since πj is binary, two options are possible when we compute M * X ^(-πj * 2^j)
+  * M * X^(-πj * 2^j) = m if πj =0, M * X^ -2j if πj = 1
+ * This if condition can be evaluated as a CMux that takes as inputs...
+  *  A GGSW encryption of πj as selector;
+  *  A GLWE encryption of M as the "0" option;
+  *  A GLWE encryption of M times X^-2j (rotation of a clear number of positions) as the "1" option
+ * The result is a GLWE encryption of M * X ^(-πj * 2^j), and the blind rotation computers recursively the product of the GLWE encryption of M by each of these monomials, so it performs a sequence of CCmuxes, the result of each becoming the new message option of the following CMux.
+
+ ## Bootstrapping
+ * Bootstrapping is an operation introduced in 2009 by Gentry, allowing reduction of noise and building of homomorphic functions (potentially) as large as we want. Bootstrapping is still a very costly operation though.
+ * To perform bootstrapping, we must evaluate the decryption function homomorphically. In fact, decryption is the only function that can get rid of randomness and noise.
+ * LWE decryption involves the computation of the linear combination:
+                                           n-1
+                                         b-Σ ai*si= △m + e ∈Zq
+                                           i=0
+ * And the rescale and rounding [(△m + e)/△] = m
+* The THFE approach is to put the computation (negation) of the above equation in the exponent of a monomial X, and then to use said monomial to rotate a Look-Up Table (LUT) that evaluates the second step of the decryption (rescale and rounding)
+* After computing X^-(△m + e), you want to be able to associate the value m to the value △m + e, under the only necessary condition for correct decryption that |e|<△/2
+* Blocks containing multiple repetitions of the same value mega-cases. Observe that the mega-case corresponding to the value 0 is split into 2 halves, cause if the error is negative, then △0 + e is a negative value and goes up to modulo q.
+* We evaluate LUT by performing a polynomial rotation: all the elements of the redundant LUT are placed into a polynomial and it is rotated of △m + e positions by multiplying it times X^-(△m + e). The rotation brings one of the elements contained in the mega-case corresponding to m in the constant position of the polynomial (AKA the _reading position_). Therefore, when we want to read a coefficient of a polynomial we rotate the polynomial until the coefficient is in constant position instead of going to the coefficient location.
+* Modulus switching allows us to compress the information modulo q to a smaller space
+* The monomial X modulo X^N + 1 has order 2N, which in practice means that to get back the identity we must rotate times X^(2N). By fixing the N coefficient of the polynomial, we are actually fixing 2N coefficients: the second half is a copy of the first N coefficients with opposite sign. This is the _negacyclic property_.
+* If the LUT you are evaluating is negacyclic, then you can encode the information by using all the p possible values for the message, otherwise you can only use (p/2).
+* Modulus switching is done from q to 2N.
+### Step 1
+* In order to rotate we must compress message information from modulo q to modulo 2N via modulus switching. Once that step is done, use the output of the modulus switching to put the information in the exponent of X.
+* Blind rotation takes as input a trivial GLWE encryption of the LUT polynomial, all the elements of ~c-(~a0,...,~an-1, ~b) and GGSW encryptions of the LWE secret key elements ->s = (s0,..., sn-1) under a new GLWE secret key ->S'. These GGSW encryptions of the secret key elements are the _bootstrapping key_.
+* The blind rotation steps are....
+ * Initialize the blind rotation by multiplying the trivial GLWE encryption of V (elements of ~c) times X^-b (rotation)
+ * Pass the trivial encryption of V. X^-b = V0 as input to a first CMux: the CMux uses as selector the GGSW encryption of the bit s0 of the LWE secret key, and as options V0 and V0 * X^(~a0). This step outputs a GLWE encryption of V1 = V0 * X^(~a0s0).
+ * Pass the GLWE encryption of V1 to a second CMux: the Cmux uses as selector the GGSW encryption of the bit s1 of the LWE secret key, and as options V1 and V1 * X^(~a1), and so on until a total of n CMuxes.
+* The result of the blind rotation is a GLWE encryption of...
+ * Vn = Vn-1 * X^(~an-1sn-1)
+ * = V * X^(~-b) * X^(~a0s0).....X^(~an-1sn-1)
+                n-1
+ * = V * X^(~-b+Σ aisi = V * X^-(~ △m + ~e)
+                i-0
+   
+## Putting Things Together
+* The last step of bootstrapping is sample extraction.
+* Blind rotation evaluates a LUT encoded inside the polynomial V. While it was previously stated that the output for bootstrapping is an encryption of m and said value is encoded on V, LUT can actually encode any function evaluated on the inputs. If instead of putting m in V, we put fm where fm is the output of a function f evaluated on m, then the bootstrapping is able to evaluate the function f at the same time as it reduces the noise. This is why it is often called _programmable bootstrapping_. Whatever the value of fm, we generally put a scaling factor in front of it, which could be the same as △ or a new one. Evaluating the bootstrapping that simply refreshes the noise or the bootstrapping that evaluates any LUT have the same cost.
+* The polynomial V is generally given un-encrypted, but if we want to hide the LUT we're evaluating, we can give in input to bootstrapping the polynomial V encrypted as a (non trivial) GLWE ciphertext. This _function hiding_ has little to no impact on performances.
+* Bootstrapping consists of a bunch of homomorphic operations that, by definition, make the noise grow again. The trick comes from the bootstrapping keys, which are chosen with parameters that allow the noise to be very small, so that after the bootstrapping computations the output noise is way smaller than the noise in the input LWE ciphertext. A wrong choice of parameters can compromise the result, so a _good choice of parameters_ is fundamental for bootstrapping to work successfully.
+* To summarize, TFHE bootstrapping takes LWE ciphertext as input, a polynomial V, and a bootstrapping key BK, where BKi is a GGSW encryption of the secret LWE key bit si under the GLWE secret key ->S'. Bootstrapping then does the following steps...
+ * _Modulus switching_: on the input LWE ciphertext c to switch from modulo q to modulo 2N, giving in output ~c = (~a0,....,~an-1, ~b)∈LWEsσ(~△m0)⊆Z2N^n+1;
+ * _Blind rotation_: on the polynomial V (encrypted as a trivial GLWE ciphertext) by using the output LWE ciphertext of modulus switching ~c and the bootstrapping key BK, outputting a GLWE encryption of V * X^-(~△m + ~e) under a new GLWE secret key ->S'
+ * _Sample extraction_: of the constant coefficient of the GLWE output of the blind rotation, as a LWE encryption of fm, under the extracted LWE secret key ->s'.
+* If you want to go back from the new LWE secret key ->s' to the original LWE secret key ->s, an LWE-to-LWE key switching can be performed.
+
+## An Example of Bootstrapping: Neural Networks Applications
+* A neural network is composed of artificial neurons. In the simplest neural networks, neurons take as input the integer outputs of previous neurons (x1,...., xn) (or the inputs to the NN, if the neurons are at the first layer), and evaluate the neuron in two steps:
+ * A linear combination between the integer inputs (x1,...., xn) times given integer weights (w1,....,wn) plus an integer bias b: this outputs an integer...
+                             n
+                          y= Σ  xiwi + b;
+                             i=1
+ * An activation function f evaluated on y: an activation function is a non-linear function, such as the sign function, ReLU, sigmoid, hyberbolic tangent, etc.
+* In TFHE, we can evaluate the inference of NN homomorphically by encrypting integer inputs as LWE ciphertexts. The linear combination is evaluated as a list of multiplications between LWE ciphertexts and cosntants, and LWE additions.
+* The activation function is evaluated as a programmable bootstrapping, so the noise is reduced at the same time and output can be passed to the next neuron.
+* Since noise is managed inside each neuron, we can evaluate any NN, even deep ones. 
 * Source: https://www.zama.ai/post/tfhe-deep-dive-part-4
+
