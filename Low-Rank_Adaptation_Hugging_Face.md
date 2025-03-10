@@ -254,4 +254,223 @@ image.save("yoda-naruto.png")
 * Source: https://huggingface.co/docs/diffusers/en/training/text2image#script-parameters
 
 # Load Adapters
-* 
+* Some adapters generate an entirely new model, while other only modify a smaller set of embeddings or weights. This means that each adapter also has a different loading process.
+## Dreambooth
+* DreamBooth finetunes an entire diffusion model on just several images of a subject to generate images of said subject in new styles and settings. This method uses a special word in the prompt that the model learns to associate with the subject image. Of all the training methods, DreamBooth produces the largest file size (usually a few GBs) because it is a full checkpoint model.
+* In this example, the word `herge_style` in the prompt triggers the checkpoint
+```
+from diffusers import AutoPipelineForText2Image
+import torch
+
+pipeline = AutoPipelineForText2Image.from_pretrained("sd-dreambooth-library/herge-style", torch_dtype=torch.float16).to("cuda")
+prompt = "A cute herge_style brown bear eating a slice of pizza, stunning color scheme, masterpiece, illustration"
+image = pipeline(prompt).images[0]
+image
+```
+## LoRA
+* LoRA is fast and generates smaller file sizes (a few hundred MBs). It can train a model to learn new styles from a few images. It works by inserting new weights into the diffusion model and then only those weights are trained.
+* LoRA is a very general training technique that can be used with other training methods. For instance, it is common to train a model with DreamBooth and LoRA, or to load and merge mutliple LoRAs to create new and unique images.
+* LoRAs also need to be used with another model:
+```
+from diffusers import AutoPipelineForText2Image
+import torch
+
+pipeline = AutoPipelineForText2Image.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
+```
+* Then use the `load_lora_weights()` method to load new weights and specify their filename from the repository
+```
+pipeline.load_lora_weights("ostris/super-cereal-sdxl-lora", weight_name="cereal_box_sdxl_v1.safetensors")
+prompt = "bears, pizza bites"
+image = pipeline(prompt).images[0]
+image
+```
+* The load_lora_weights() method loads LoRA weights into both the UNet and text encoder. It is the preferred way for loading LoRAs because it can handle cases where
+  * LoRA weights don't have separate identifiers for the UNet and text encoder
+  * LoRA weights have separate identifiers for the UNet and text encoder
+* To directly load (and save) a LoRA adapter at the model level, use `~PeftAdapterMixin.load_lora_adapter`, which builds and prepares the necessary model configuration for the adapter. Like `load_lora_weights()`, `PeftAdapterMixin.load_lora_adapter` can load LoRAs for both the UNet and text encoder. For instance, if loading a LoRA for the UNet, `PeftAdapterMixin.load_lora_adapter` ignores the keys for the text encoder.
+* The `weight_name` parameter specifies the weight file and `prefix` filters for the appropriate state dicts ("unet" in this case) to load.
+```
+from diffusers import AutoPipelineForText2Image
+import torch
+
+pipeline = AutoPipelineForText2Image.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
+pipeline.unet.load_lora_adapter("jbilcke-hf/sdxl-cinematic-1", weight_name="pytorch_lora_weights.safetensors", prefix="unet")
+
+# use cnmt in the prompt to trigger the LoRA
+prompt = "A cute cnmt eating a slice of pizza, stunning color scheme, masterpiece, illustration"
+image = pipeline(prompt).images[0]
+image
+```
+* Save an adapter with `~PeftAdapterMixin.save_lora_adapter`. To unload LoRA weights, use the unload_lora_weights() method to discard the LoRA weights and restore the model to its original weights. `pipeline.unload_lora_weights()`
+
+### Adjust LoRA Weight Scale
+* For load_lora_weights() and load_attn_procs(), you can pass the `cross_attention_kwargs={"scale": 0.5}` parameter to adjust how much of the LoRA weights to use. 0 is base weights, 1 is fully finetuned LoRA.
+* For more granular control on the amount of LoRA weights used per layer, use `set_adapters()` and pass a dictionary specifying how much to scale weights in each layer by.
+```
+pipe = ... # create pipeline
+pipe.load_lora_weights(..., adapter_name="my_adapter")
+scales = {
+    "text_encoder": 0.5,
+    "text_encoder_2": 0.5,  # only usable if pipe has a 2nd text encoder
+    "unet": {
+        "down": 0.9,  # all transformers in the down-part will use scale 0.9
+        # "mid"  # in this example "mid" is not given, therefore all transformers in the mid part will use the default scale 1.0
+        "up": {
+            "block_0": 0.6,  # all 3 transformers in the 0th block in the up-part will use scale 0.6
+            "block_1": [0.4, 0.8, 1.0],  # the 3 transformers in the 1st block in the up-part will use scales 0.4, 0.8 and 1.0 respectively
+        }
+    }
+}
+pipe.set_adapters("my_adapter", scales)
+```
+## Kohya and TheLastBen
+* These other LoRA trainers create different LoRA checkpoints than those trained by Diffusers, but they can still be loaded in the same way.
+* EX: this is how the TheLastBen/William_Eggleston_Style_SDXL checkpoint is loaded
+```
+from diffusers import AutoPipelineForText2Image
+import torch
+
+pipeline = AutoPipelineForText2Image.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
+pipeline.load_lora_weights("TheLastBen/William_Eggleston_Style_SDXL", weight_name="wegg.safetensors")
+
+# use by william eggleston in the prompt to trigger the LoRA
+prompt = "a house by william eggleston, sunrays, beautiful, sunlight, sunrays, beautiful"
+image = pipeline(prompt=prompt).images[0]
+image
+```
+* Source: https://huggingface.co/docs/diffusers/en/using-diffusers/loading_adapters#LoRA
+
+# Create a Dataset
+* Creating a dataset with Hugging Face Datasets confers all advantages of the library to your dataset: fast loading and processing, streaming enormous datasets, and memory mapping.
+* Datasets has a low-code approach, reducing time taken to start training a model. In some cases, you just need to drag and drop your data files into a dataset repository on the Hub.
+
+## File-Based Builders
+* Hugging Face Datasets supports many common formats like csv, json/jsonl, parquet, and txt. Below is an example where multiple CSV files are passed as a list.
+```
+from datasets import load_dataset
+dataset = load_dataset("csv", data_files="my_file.csv")
+```
+## Folder-Based Builders
+* `ImageFolder` and `AudioFolder` are both used for quickly creating an image or speech and audio dataset with several thousand examples. They work well for rapidly prototyping computer vision and speech models before scaling to a larger dataset.
+  * `ImageFolder` uses the Image feature to decode an image file. Many image extension formats are supported, such as jpg and png, but other formats are also supported. You can check the complete list of supported image extensions.
+  * `AudioFolder` uses the Audio feature to decode an audio file. Audio extensions such as wav and mp3 are supported.
+* Dataset splits are generated from the repository structure, and label names are automatically inferred from the directory name.
+* EX: folder/train/grass/bulbasaur.png (train is used to generate split, grass is used to infer the label name, and bulbasaur is decoded by image)
+* An image dataset is created by specifying imagefolder in load_dataset()
+```
+from datasets import load_dataset
+
+dataset = load_dataset("imagefolder", data_dir="/path/to/pokemon")
+```
+* Any additional information about your dataset, such as text captions or transcriptions, can be included with a `metadata.csv` file in the folder containing your dataset. Said file needs a `file_name` column that links an image or audio file to its corresponding metadata.
+
+## From Python Dictionaries
+* You can also create a dataset from data in Python dictionaries. `from_` methods can accomplish this in two ways...
+  * The from_generator() method is the most memory-efficient way to create a dataset from a generator due to a generator's iterative behavior (especially useful with larger datasets).
+  ```
+  from datasets import Dataset
+  def gen():
+      yield {"pokemon": "bulbasaur", "type": "grass"}
+      yield {"pokemon": "squirtle", "type": "water"}
+  ds = Dataset.from_generator(gen)
+  ds[0]
+  ```
+  * A generator-based IterableDataset needs to be iterated over with a for loop
+  ```
+  from datasets import IterableDataset
+  ds = IterableDataset.from_generator(gen)
+  for example in ds:
+      print(example)
+  ```
+  * The from_dict() method also lets you create a dataset from a dictionary
+  ```
+  from datasets import Dataset
+  ds = Dataset.from_dict({"pokemon": ["bulbasaur", "squirtle"], "type": ["grass", "water"]})
+  ds[0]
+  # returns {"pokemon": "bulbasaur", "type": "grass"}
+  ```
+* Source: https://huggingface.co/docs/datasets/en/create_dataset
+
+# Load a Dataset from the Hub
+* Before downloading a dataset, it's often helpful to quickly get general information, which is stored in DatasetInfo. It includes information like the dataset description, features, and size.
+* load_dataset_builder() loads a dataset builder and inspects a dataset's attributes without committing to downloading it:
+```
+from datasets import load_dataset_builder
+ds_builder = load_dataset_builder("cornell-movie-review-data/rotten_tomatoes")
+
+ds_builder.info.description
+# Returns: Movie Review Dataset. This is a dataset of containing 5,331 positive and 5,331 negative processed sentences from Rotten Tomatoes movie reviews. This data was first used in Bo Pang and Lillian Lee, ``Seeing stars: Exploiting class relationships for sentiment categorization with respect to rating scales.'', Proceedings of the ACL, 2005
+ds_builder.info.features
+# Returns: {'label': ClassLabel(names=['neg', 'pos'], id=None),
+ 'text': Value(dtype='string', id=None)}
+```
+* If you're happy with a dataset, load it with load_dataset()
+```
+from datasets import load_dataset
+
+dataset = load_dataset("cornell-movie-review-data/rotten_tomatoes", split="train")
+```
+## Splits
+* A split is a specific subset of a dataset like train and test. List a dataset's split names with the get_dataset_split_names() function
+```
+from datasets import get_dataset_split_names
+
+get_dataset_split_names("cornell-movie-review-data/rotten_tomatoes")
+```
+* You can also load a specific split with the split parameter. Loading a dataset split returns a Dataset object.
+```
+from datasets import load_dataset
+
+dataset = load_dataset("cornell-movie-review-data/rotten_tomatoes", split="train")
+dataset
+```
+## Configurations
+* Some datasets contain several sub-datasets. These are known as configurations or subsets, and you must explicitly select one when loading a dataset.
+* Use the get_dataset_config_names() function to retrieve a list of all possible configurations available to your dataset.
+```
+from datasets import get_dataset_config_names
+
+configs = get_dataset_config_names("PolyAI/minds14")
+print(configs)
+```
+* Then load the configuration you want:
+```
+from datasets import load_dataset
+
+mindsFR = load_dataset("PolyAI/minds14", "fr-FR", split="train")
+```
+## Remote Code
+* To use a dataset with a loading script (Python code is used to generate the dataset), set `trust_remote_code=True`
+```
+from datasets import get_dataset_config_names, get_dataset_split_names, load_dataset
+
+c4 = load_dataset("c4", "en", split="train", trust_remote_code=True)
+get_dataset_config_names("c4", trust_remote_code=True)
+get_dataset_split_names("c4", "en", trust_remote_code=True)
+```
+* Source: https://huggingface.co/docs/datasets/en/load_hub
+
+# Load Text Data
+* By default, Hugging Face Datasets samples a text file line by line to build the dataset.
+```
+from datasets import load_dataset
+dataset = load_dataset("text", data_files={"train": ["my_text_1.txt", "my_text_2.txt"], "test": "my_test_file.txt"})
+
+dataset = load_dataset("text", data_dir="path/to/text/dataset")
+```
+* To sample a text file by paragraph or even an entire document, use the `sample_by` parameter.
+```
+dataset = load_dataset("text", data_files={"train": "my_train_file.txt", "test": "my_test_file.txt"}, sample_by="paragraph")
+
+dataset = load_dataset("text", data_files={"train": "my_train_file.txt", "test": "my_test_file.txt"}, sample_by="document")
+```
+* You can also use grep patterns to load specific files
+```
+from datasets import load_dataset
+c4_subset = load_dataset("allenai/c4", data_files="en/c4-train.0000*-of-01024.json.gz")
+```
+* Source: https://huggingface.co/docs/datasets/en/nlp_load
+
+# PEFT LoRA
+*
+* Source: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora
