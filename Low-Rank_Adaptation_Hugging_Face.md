@@ -472,5 +472,153 @@ c4_subset = load_dataset("allenai/c4", data_files="en/c4-train.0000*-of-01024.js
 * Source: https://huggingface.co/docs/datasets/en/nlp_load
 
 # PEFT LoRA
-*
+* LoRA makes fine-tuning more efficient by representing weight updates with two smaller matrices (called update matrices) through low-rank decomposition. Said matrices can be trained to adapt to new data while keeping the overall number of changes low. The original weight matrix remains frozen and receives no further adjustments, and the results combine the original and adapted weights.
+* Advantages of LoRA include....
+  * LoRA makes fine-tuning more efficient by drastically reducing the number of trainable parameters.
+  * The original pre-trained weights are kept frozen, which means you can have multiple lightweight and portable LoRA models for various downstream tasks built on top of them.
+  * LoRA is orthogonal to many other parameter-efficient methods and can be combined with many of them.
+  * Performance of models fine-tuned using LoRA is comparable to the performance of fully fine-tuned models
+  * LoRA does not add any inference latency because adapter weights can be merged with the base model.
+* In Transformer models, LoRA is usually added to attention blocks only. The resulting number of trainable parameters in a LoRA model depends on the size of the low-rank update matrices, which is determined mainly by the rank r and the shape of the original weight matrix.
+
+## Merge LoRA Weights Into the Base Model
+* To eliminate latency, use the merge_and_unload() function to merge adapter weights with the base model, allowing you to use the new merged model as a standalone model.
+* During training, smaller weight matrices are separate, but once training is complete, said weights can be merged into an identical weight matrix.
+## Utils for LoRA
+* merge_adapter() merges LoRA layers into the base model while retaining the PeftModel, making umerging and loading different adapters easier.
+* unmerge_adapter() unmerges LoRA layers from the base model while retaining the PeftModel (assists in merging, deleting, loading different adapters)
+* unload() gets back the base model without merging active LoRA modules. This helps when you want to get back to the pretrained base model in some applications when you want to reset the model to its original state.
+* delete_adapter() deletes an existing adapter
+* add_weighted_adapter() combines multiple LoRAs into a new adapter based on the user provided weighing scheme
+## Common LoRA Parameters in PEFT
+* To fine-tune a model using LoRA, you must....
+  1. Instantiate a base model
+  2. Create a configuration (LoraConfig) where you define LoRA-specific parameters
+  3. Wrap the base model with get_peft_model() to get a trainable PeftModel
+  4. Train the PeftModel as you normally would train the base model
+* LoraConfig lets you control how LoRA is applied to the base model through these parameters...
+  * r: the rank of the update matrices, expressed in int. Lower rank results in smaller update matrices with fewer trainable parameters
+  * target_modules: the modules (for example, attention blocks) to apply the LoRA update matrices
+  * lora_alpha: LoRA scaling factor
+  * bias: specifies if the bias parameters should be trained. Can be 'none', 'all', or 'lora_only'
+  * use_rslora: when set to True, uses Rank-Stablized LoRA, which sets the adapter scaling factor to lora_alpha/math.sqrt(r), since it was proven to work better. Otherwise, it will use the original default value of lora_alpha/r.
+  * modules_to_save: list of modules apart from LoRA layers to be set as trainable and saved in the final checkpoint. These typically include model's custom head that is randomly initialized for the fine-tuning task.
+  * layers_to_transform: list of layers to be transformed by LoRA. If not specified, all layers in target_modules are transformed.
+  * layers_pattern: pattern to match layer names in target_modules, if layers_to_transform is specified. By default PeftModel looks at common layer pattern (layers, h, blocks, etc), use it for exotic and custom models.
+  * rank_pattern: the mapping from layer names or regexp expression to ranks which are different from the default rank specified by r
+  * alpha_pattern: the mapping from layer names or regexp expression to alphas which are different from the default alpha specified by lora_alpha
+## Initialization Options
+* The initialization of LoRA weights is controlled by the parameter init_lora_weights of the LoraConfig. PEFT initializes LoRA weights by using Kaiming-uniform for weight A and initializing weight B as zeros, resulting in an identity transform.
+* It's also possible to pass init_lora_weights="gaussian", which initializes weight A with a Gaussian distribution (weight B is still zeros) corresponding to the way that the diffusers library initializes LoRA weights.
+* LoftQ performs initialization in a way that ensures quantization error is minimized. To do this, DON'T quantize the base model, instead use the code below...
+  ```
+  from peft import LoftQConfig, LoraConfig, get_peft_model
+  
+  base_model = AutoModelForCausalLM.from_pretrained(...)  # don't quantize here
+  loftq_config = LoftQConfig(loftq_bits=4, ...)           # set 4bit quantization
+  lora_config = LoraConfig(..., init_lora_weights="loftq", loftq_config=loftq_config)
+  peft_model = get_peft_model(base_model, lora_config)
+  ``` 
 * Source: https://huggingface.co/docs/peft/main/en/conceptual_guides/lora
+  
+## LoRA Examples: Semantic Segmentation
+* LoRA adds low-rank "update matrices" to specific blocks of a model, and during fine-tuning, only these matrices are trained, while the original model parameters are left unchanged.
+### Install Dependencies
+`!pip install transformers accelerate evaluate datasets peft -q `
+### Authenticate to Share Your Model
+* Use your hugging face token
+```
+from huggingface_hub import notebook_login
+
+notebook_login()
+```
+### Load a Dataset
+* To ensure a reasonable time frame for the example, limit the number of instances from a training set to 150.
+```
+from datasets import load_dataset
+
+ds = load_dataset("scene_parse_150", split="train[:150]")
+```
+* Then split the dataset into train and test sets
+```
+ds = ds.train_test_split(test_size=0.1)
+train_ds = ds["train"]
+test_ds = ds["test"]
+```
+### Load a Base Model
+* Before loading a base model, define a helper function to check the total number of parameters a model has and how many of them are trainable.
+```
+def print_trainable_parameters(model):
+    """
+    Prints the number of trainable parameters in the model.
+    """
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
+    )
+```
+* Choose a base model checkpoint (for instance, the SegFormer B0 variant). In addition to the checkpoint, pass label2id and id2label dictionaries to let the AutoModelForSemanticSegmentation class know we're interested in a custom base model where the decoder head should be randomly initialized using classes from the custom dataset.
+```
+from transformers import AutoModelForSemanticSegmentation, TrainingArguments, Trainer
+
+model = AutoModelForSemanticSegmentation.from_pretrained(
+    checkpoint, id2label=id2label, label2id=label2id, ignore_mismatched_sizes=True
+)
+print_trainable_parameters(model)
+```
+### Wrap Base Model as a PeftModel for LoRA Training
+* To leverage LoRA, you must wrap the base model as a PeftModel, which has two steps
+  1. Define LoRA configuration with LoraConfig
+  2. Wrapping the original model with get_peft_model() using the config
+```
+from peft import LoraConfig, get_peft_model
+
+config = LoraConfig(
+    r=32,
+    lora_alpha=32,
+    target_modules=["query", "value"],
+    lora_dropout=0.1,
+    bias="lora_only",
+    modules_to_save=["decode_head"],
+)
+lora_model = get_peft_model(model, config)
+print_trainable_parameters(lora_model)
+```
+* To enable LoRA technique, we must define the target modules within LoraConfig so that PeftModel can update the necessary matrices. We want to target the query and value matrices in the attention blocks of the base model. "query" and "value" should be specified in the target_modules argument of LoraConfig
+* After the base model is wrapped with PeftModel along with the config, we get a new model where only the LoRA parameters are trainable ("update matrices") while the pre-trained parameters are kept frozen. To ensure classifier parameters are also trained, specify modules_to_save. This also ensures that these modules are serialized alongside the LoRA trainable parameters when using utilities like save_pretrained() and push_to_hub()
+* When we wrap our base model with PeftModel and pass the configuration, a new model is obtained where only LoRA parameters are trainable, and pre-trained/randomly initialized classifier parameters are kept frozen. To ensure classifier parameters are trained, specify modules_to_save. This ensures that modules are serialized alongside LoRA trainable parameters when using utilities like save_pretrained() and push_to_hub()
+* Other parameters include:
+  * r: the dimension used by the LoRA update matrices
+  * alpha: Scaling factor
+  * bias: specifies if the bias parameters should be trained. None denotes none of the bias parameters will be trained.
+* print_trainable_parameters lets us explore number of trainable parameters (should be lower in lora_model than the original). You can also manually verify what modules are trainable in the lora_model.
+```
+for name, param in lora_model.named_parameters():
+    if param.requires_grad:
+        print(name, param.shape)
+```
+### Save the Model and Run Inference
+* Use the save_pretrained() method of the lora_model to save the LoRA-only parameters locally. Alternatively, use the push_to_hub() method to upload these parameters directly to the Hugging Face Hub
+```
+model_id = "segformer-scene-parse-150-lora"
+lora_model.save_pretrained(model_id)
+```
+* You can then prepare an inference_model and run inference
+```
+from peft import PeftConfig
+
+config = PeftConfig.from_pretrained(model_id)
+model = AutoModelForSemanticSegmentation.from_pretrained(
+    checkpoint, id2label=id2label, label2id=label2id, ignore_mismatched_sizes=True
+)
+
+inference_model = PeftModel.from_pretrained(model, model_id)
+```
+* Source: https://huggingface.co/docs/peft/main/en/task_guides/semantic_segmentation_lora
+
+## Fine-Tune a Pretrained Model
