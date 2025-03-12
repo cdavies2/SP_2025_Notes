@@ -58,4 +58,61 @@ model = TheModelClass(*args, **kwargs)
 model.load_state_dict(torch.load(PATH, weights_only=True))
 model.eval()
 ```
-* When saving a model for inference, it's only required to save the trained model's learned parameters. Saving the model's state_dict with torch.save() will give
+* When saving a model for inference, it's only required to save the trained model's learned parameters. Saving the model's state_dict with torch.save() will give the most flexibility for restoring the model later.
+* You must call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference. Failing to do this yields inconsistent inference results.
+* If you only plan to keep the best performing model, `best_model_state = model.state_dict()` returns a reference to the state, not its copy. You should use `best_model_state = deepcopy(model.state_dict())`, otherwise `best_model_state` will continually get updated.
+## Saving and Loading Entire Model
+* Save
+` torch.save(model, PATH)`
+* Load
+```
+# Model class must be defined somewhere
+model = torch.load(PATH, weights_only=False)
+model.eval()
+```
+* Saving a model in this way saves the entire module, but the disadvantahe is the serialized data is bound to specific classes and exact directory structure used when the model is saved (as the path to the file with the class is saved, not the class itself).
+* Remember, call model.eval() to set dropout and batch normalization layers to evaluation mode before running inference.
+
+## Export/Load Model in TorchScript
+* TorchScript is the recommended format for scaled inference and deployment. It allows you to load a model and run inference without defining the model class.
+* Export
+```
+model_scripted = torch.jit.script(model) # Export to TorchScript
+model_scripted.save('model_scripted.pt') # Save
+```
+* Load
+```
+model = torch.jit.load('model_scripted.pt')
+model.eval()
+```
+* Remember to call model.eval()
+
+## Saving and Loading a General Checkpoint for Inference and/or Resuming Training
+* Save
+```
+torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            ...
+            }, PATH)
+```
+* Load
+```
+model = TheModelClass(*args, **kwargs)
+optimizer = TheOptimizerClass(*args, **kwargs)
+
+checkpoint = torch.load(PATH, weights_only=True)
+model.load_state_dict(checkpoint['model_state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+epoch = checkpoint['epoch']
+loss = checkpoint['loss']
+
+model.eval()
+# - or -
+model.train()
+```
+* When saving a general checkpoint, either for inference or resuming training, save both the model and optimizer's sate_dict (as that contains buffers and parameters that are updated as a model trains). You also might want to save the latest recorded training loss, and external `torch.nn.Embedding` layers.
+* To save multiple components, organize them in a dictionary and use torch.save() to serialize it (saving checkpoints with the .tar file extension.
+* Source: https://pytorch.org/tutorials/beginner/saving_loading_models.html
