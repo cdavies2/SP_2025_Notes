@@ -622,3 +622,163 @@ inference_model = PeftModel.from_pretrained(model, model_id)
 * Source: https://huggingface.co/docs/peft/main/en/task_guides/semantic_segmentation_lora
 
 ## Fine-Tune a Pretrained Model
+* Before fine-tuning a pretrained model, download a dataset and prepare it for training.
+* First, load the dataset
+```
+from datasets import load_dataset
+
+dataset = load_dataset("yelp_review_full")
+dataset["train"][100]
+```
+* A tokenizer is needed to process text and include a padding and truncation strategy to handle any variable sequence lengths. The Datasets map method can apply a preprocessing function over an entire dataset.
+```
+from transformers import AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-cased")
+
+
+def tokenize_function(examples):
+    return tokenizer(examples["text"], padding="max_length", truncation=True)
+
+
+tokenized_datasets = dataset.map(tokenize_function, batched=True)
+```
+* A smaller subset of the full dataset can be created to fine-tune on, thus reducing processing time.
+```
+small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
+small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
+```
+### Train with PyTorch Trainer
+* The Trainer class is optimized for training Transformers models, making it easier to start training without manually writing a training loop.
+* Start by loading the model, specifying the number of expected labels.
+* By default, weights are loaded in full precision regardless of data type, and setting `torch_dtype="auto"` loads weights in the data type defined in a model's config.json file to automatically load the most memory-optimal data type.
+```
+from transformers import AutoModelForSequenceClassification
+
+model = AutoModelForSequenceClassification.from_pretrained("google-bert/bert-base-cased", num_labels=5, torch_dtype="auto")
+```
+### Training Hyperparameters
+* Create a TrainingArguments class which contains all the hyperparameters you can tune as well as flags for activating different training options. Specify where to save training checkpoints
+```
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(output_dir="test_trainer")
+```
+### Evaluate
+* Trainer needs to be passed a function from the Evaluate library (the accuracy function) to compute and report metrics.
+```
+import numpy as np
+import evaluate
+
+metric = evaluate.load("accuracy")
+```
+* Call compute on metric to calculate prediction accuracy. Before passing predictions to compute, convert logits to predictions (models return logits)
+```
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels)
+```
+* If you'd like to monitor evaluation metrics during fine-tuning, specify the `eval_strategy` parameter in the training arguments to report the evaluation metric at the end of each epoch.
+```
+from transformers import TrainingArguments, Trainer
+
+training_args = TrainingArguments(output_dir="test_trainer", eval_strategy="epoch")
+```
+### Trainer
+* Create a Trainer object with your model, training arguments, training and test datasets, and evaluation function, and fine-tune by calling train()
+```
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=small_train_dataset,
+    eval_dataset=small_eval_dataset,
+    compute_metrics=compute_metrics,
+)
+```
+### Train in Native PyTorch
+* If you don't want to use Trainer's loop, you can write your own in PyTorch. You might need to run the code below at the beginning to free some memory
+```
+from accelerate.utils.memory import clear_device_cache
+del model
+del trainer
+clear_device_cache()
+```
+* Next, manually postprocess the dataset: Remove the text column (not accepted as input), rename the label column to labels, set the format to return Tensors, and create a smaller subset
+```
+tokenized_datasets = tokenized_datasets.remove_columns(["text"])
+tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
+tokenized_datasets.set_format("torch")
+small_train_dataset = tokenized_datasets["train"].shuffle(seed=42).select(range(1000))
+small_eval_dataset = tokenized_datasets["test"].shuffle(seed=42).select(range(1000))
+```
+* Then create a DataLoader for your training and test datasets so you can iterate over batches of data, and load your model with the number of expected labels
+```
+from torch.utils.data import DataLoader
+
+train_dataloader = DataLoader(small_train_dataset, shuffle=True, batch_size=8)
+eval_dataloader = DataLoader(small_eval_dataset, batch_size=8)
+
+from transformers import AutoModelForSequenceClassification
+
+model = AutoModelForSequenceClassification.from_pretrained("google-bert/bert-base-cased", num_labels=5)
+```
+* Create an optimizer and learning rate scheduler to fine-tune the model, then create the default learning rate scheduler from Trainer
+```
+from torch.optim import AdamW
+
+optimizer = AdamW(model.parameters(), lr=5e-5)
+
+from transformers import get_scheduler
+
+num_epochs = 3
+num_training_steps = num_epochs * len(train_dataloader)
+lr_scheduler = get_scheduler(
+    name="linear", optimizer=optimizer, num_warmup_steps=0, num_training_steps=num_training_steps
+)
+```
+* Specify device GPU if you have one (this can make training take minutes as opposed to hours on a CPU)
+```
+import torch
+from accelerate.test_utils.testing import get_backend
+
+device, _, _ = get_backend() # automatically detects the underlying device type (CUDA, CPU, XPU, MPS, etc.)
+model.to(device)
+```
+* To keep track of training progress, use the tqdm library to add a progress bar over the number of training steps
+```
+from tqdm.auto import tqdm
+
+progress_bar = tqdm(range(num_training_steps))
+
+model.train()
+for epoch in range(num_epochs):
+    for batch in train_dataloader:
+        batch = {k: v.to(device) for k, v in batch.items()}
+        outputs = model(**batch)
+        loss = outputs.loss
+        loss.backward()
+
+        optimizer.step()
+        lr_scheduler.step()
+        optimizer.zero_grad()
+        progress_bar.update(1)
+```
+* Instead of calculating and reporting the metric at the end of each epoch, accumulate all the batches with `add_batch` and calculate the metric at the very end
+```
+import evaluate
+
+metric = evaluate.load("accuracy")
+model.eval()
+for batch in eval_dataloader:
+    batch = {k: v.to(device) for k, v in batch.items()}
+    with torch.no_grad():
+        outputs = model(**batch)
+
+    logits = outputs.logits
+    predictions = torch.argmax(logits, dim=-1)
+    metric.add_batch(predictions=predictions, references=batch["labels"])
+
+metric.compute()
+```
+* Source: https://huggingface.co/docs/transformers/en/training
