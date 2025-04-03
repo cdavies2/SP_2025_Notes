@@ -41,5 +41,39 @@
 * Attention mechanisms allow modeling of dependencies without regard to their distance in the input or output sequences, but such mechanisms were often used in conjunction with a recurrent network.
 * The Transformer model architecture eschews recurrence and relies entirely on the attention mechanism, resulting in more parallelization and higher translation quality.
 ## Background
-* 
+* In models like the Extended Neural GPU and ByteNet, the number of operations needed to relate signals from two arbitrary input/output position grows in the distance between positions, making it difficult to learn dependencies between far distances.
+* In the Transformer, this is reduced to a constant number of operations.
+* Self-attention (or intra-attention) is an attention mechanism relating different positions of a single sequence in order to compute a representation of said sequence. It is useful for summarization and reading comprehension.
+* End-to-end memory nutworks are based on a recurrent attention mechanism instead of sequence-aligned recurrence and perform well on question answering tasks.
+* The Transformer is the first transduction model relying on self-attention to compute representations of its input/output without a sequence-alligence RNN or convolution.
+## Model Architecture
+* In a neural network, the encoder maps an input sequence of symbol representations to a sequence of continuous representations, and the decoder generates an output sequence of symbols, one element at a time.
+* These models are auto-regressive, consuming previously generated symbols as additional input when generating the next.
+* Transformers have fully connected self-attention layers for the encoder and decoder.
+### Encoder and Decoder Stacks
+* _Encoder_: the encoder is a stack of N=6 identical layers. Each layer has two sublayers, a multi-head self-attention mechanism, and a position-wise fully connected feed-forward network. There is a residual connection around each sub-layer followed by layer normalization (LayerNorm(x+Sublayer(x)). All sub-layers and embedding layers have outputs of dimenison dmodel = 512.
+* _Decoder_: also composed of a stack of N=6 identical layers, along with a third sub-layer to erform multi-head attention over the output of the encoder. The self-attention sub-layer is modified to prevent positions from attending to subsequent positions. This, along with the fact that output embeddings are offset by one position, ensures that predictions for position i depend only on outputs from positions less than i.
+ ### Attention
+ * An attention function involves mapping a query and set of key value pairs to an output, where the query, keys, values, and output are all vectors.
+ * _Scaled Dot-Product Attention_: input consists of queries and keys of dimension dk, and values of dimension dv. The dot products of the query with all keys is computed, each is divided by the square root of dk, and a softmax function is used to obtain the weights on the values. The matrix of outputs is computed as...
+  * Attention(Q, K, V) = softmax(QK^T/ √dk ) * V
+ * _Multi-Head Attention_:
 * Source: https://arxiv.org/pdf/1706.03762
+
+# Softmax Activation
+* The softmax function is often used in the final layer of a neural network model. It converts raw output scores (called logits) into probabilities by taking the exponential of each output and normalizing said values by dividing the sum of all the exponents.
+* A softmax ensures output values are between 0 and 1 and add up to 1, making them interpretable as probabilities.
+* The mathemical expression for softmax is e to the power of the input to the softmax function for class i divided by the sum of the exponentials of all the raw class scores in the output layer.
+           k
+ * e^zi / ∑ e^zj
+           j=1
+* A softmax function converts a vector to a probability distribution by...
+  1. _Input_: the function takes a vector z of real numbers, representing the outputs from the final layer of the neural network
+  2. _Exponentiation_: each element in z is exponentiated using the mathematical constant e (approximately 2.718), ensuring all values are positive
+  3. _Normalization_: exponentiated values are divided by the sum of all exponentiated values, guaranteeing output values sum to 1.
+* Some properties of the softmax function include....
+ * _Output range_: guarantees output values are between 0 and 1
+ * _Sum of probabilities_: sum of all outputs equals 1
+ * _Interpretability_: raw output is transformed into probabilities, making predictions easier to understand and analyze.
+## Applications of softmax activation
+* Source: https://www.singlestore.com/blog/a-guide-to-softmax-activation-function/
