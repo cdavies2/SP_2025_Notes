@@ -57,7 +57,11 @@
  * An attention function involves mapping a query and set of key value pairs to an output, where the query, keys, values, and output are all vectors.
  * _Scaled Dot-Product Attention_: input consists of queries and keys of dimension dk, and values of dimension dv. The dot products of the query with all keys is computed, each is divided by the square root of dk, and a softmax function is used to obtain the weights on the values. The matrix of outputs is computed as...
   * Attention(Q, K, V) = softmax(QK^T/ √dk ) * V
- * _Multi-Head Attention_:
+ * _Multi-Head Attention_: instead of performing a single attention function with dmodel-dimensional keys, values and queries, these objects are linearly projected h times with different, learned linear projections to dk, dk, and dv dimensions respectively. On each of these projects, the attention function is performed in parallel, yielding dv-dimensional output values. These are concatenated and projected, resulting in the final values.
+  * MultiHead(Q, K, V) = Concat(head1,....,headh)W^O
+          where headi = Attention(QWi^Q, KWi^K, VWi^V)
+ ### Applications of Attention in our Model
+ 1. 
 * Source: https://arxiv.org/pdf/1706.03762
 
 # Softmax Activation
@@ -76,4 +80,26 @@
  * _Sum of probabilities_: sum of all outputs equals 1
  * _Interpretability_: raw output is transformed into probabilities, making predictions easier to understand and analyze.
 ## Applications of softmax activation
+* Softmax is often used for image recognition, Natural Language Processing, and other neural network tasks. Softmax can be implemented in Python using the code below:
+```
+from math import exp
+
+def softmax(input_vector):
+    # Calculate the exponent of each element in the input vector
+    exponents = [exp(i) for i in input_vector]
+
+    # Correct: divide the exponent of each value by the sum of the exponents
+    # and round off to 3 decimal places
+    sum_of_exponents = sum(exponents)
+    probabilities = [round(exp(i) / sum_of_exponents, 3) for i in exponents]
+
+    return probabilities
+
+print(softmax([3.2, 1.3, 0.2, 0.8]))
+```
+* Unlike functions like sigmoid or ReLU (Rectified Linear Unit), which are used in hidden layers for binary classification or non-linear transformations, softmax is uniquely suited for the output layer of multi-class scenarios. Sigmoid doesn't ensure outputs sum to one, and ReLU doesn't provide probabilities.
+## Advantages of Using Softmax
+* _Probability distribution_: softmax provides a well-defined probability distribution for each class, enabling us to assess a network's confidence in its predictions
+* _Interpretability_: probabilities are easier to understand than raw output
+* _Numerical stability_: the softmax function has strong numerical stability, making it efficient for training neural networks.
 * Source: https://www.singlestore.com/blog/a-guide-to-softmax-activation-function/
