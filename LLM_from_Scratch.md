@@ -103,3 +103,62 @@ print(softmax([3.2, 1.3, 0.2, 0.8]))
 * _Interpretability_: probabilities are easier to understand than raw output
 * _Numerical stability_: the softmax function has strong numerical stability, making it efficient for training neural networks.
 * Source: https://www.singlestore.com/blog/a-guide-to-softmax-activation-function/
+
+# How to Build an LLM from Scratch: A Step-by-Step Guide
+
+## Determine the Use Case for Your LLM
+* The use case for your LLM has a major influence on the model's size (complexity can determine number of parameters), training data requirements (more parameters require more training data), and computational resources.
+* Key reason for creating your own LLM include....
+ * Domain-Specificity: training the LLM with industry-specific data
+ * Greater Data Security: incorporating sensitive information without concerns about data storage or usage in open-source or proprietary models
+ * Ownership and Control: retaining control over confidential data allows continuous improvement of your LLM as knowledge grows and needs to evolve.
+## Create Your Model Architecture
+* A neural network is the core engine of your model that determines its capabilities and performance.
+* The Transformers architecture is highly recommended for LLMs because it is able to capture underlying patterns and relationships in data, handle long-range dependencies in text, and process input of various lengths efficiently.
+* Frameworks like PyTorch from Meta and TensorFlow from Google provide components for creating a model with Transformers architecture.
+
+## Creating the Transformer's Components
+* The _Embedding Layer_ converts input into vector representations for efficient processing. This has three main steps...
+  1. Tokenization: breaking input into tokens, often sub-word tokens of approximately four characters
+  2. Integer Assignment: assign each token an integer ID and save it in a vocabulary dictionary
+  3. Vector Conversion: converting each integer into a multi-dimensional vector, each token feature is represented by a vector dimension.
+* Transformers have two embedding layers, one in the encoder for input embeddings and one in the decoder for output embeddings.
+* A transformer generates _positional encodings_ and adds them to each embedding to track token positions within a sequence, allowing parallel token processing
+* _Self-attention mechanism_ is the most crucial part of a transformer, as it compares embeddings to determine their similarity and semantic relevance. It generates a weighted input representation, capturing relationships between tokens to calculate the most likely output.
+  * At each self-attention layer, input is projected across several smaller dimensional spaces called heads, each focusing on different aspects of the input in parallel. The original self-attention mechanism has eight heads, but the number can vary based on objective and available resources.
+  *  An encoder has one multi-head attention layer, and a decoder has two
+* _Feed-Forward Network_ captures higher level features of input to determine complex underlying relationships, and it has three sub-layers
+  1. First Linear Layer: projects input onto a higher-dimensional space (EX: 512 to 2048)
+  2. Non-Linear Activation Function: introduces non-linearity to help learn more realistic relationships. A common activation function is Rectified Linear Unit (ReLU)
+  3. Second Linear Layer: transforms the higher-dimensional representation back to its original dimensionality, compressing additional information while retaining relevant aspects.
+* _Normalization layers_ ensure input embeddings fall into a reasonable range. Transformers normalize output for each token at every layer, preserving relationships between token aspects, and not interfering with the self-attention mechanism.
+* _Residual Connections_ feed output of one layer directly into the input of another, improving data flow and preventing information loss.
+## Assembling the Encoder and Decoder
+* _Encoder_ takes the input sequence and converts it into a weighted embedding that the decoder can use to generate input. It is constructed as follows....
+  1. _Embedding Layer_: converts input tokens into vector representations
+  2. _Positional Encoder_: adds positional information to the embeddings to maintain the order of tokens
+  3. _Residual Connection_: feeds into a normalization layer
+  4. _Self-Attention Mechanism_: compares each embedding against others to determine their similarity and relevance
+  5. _Normalization Layer_: ensures stable training by normalizing the output of the self-attention mechanism
+  6. _Residual Connection_: feeds into another normalization layer
+  7. _Feed-Forward Network_: captures higher-level features of the input sequence
+  8. _Normalization Layer_: ensures output remains within a reasonable range.
+* _Decoder_ takes the weighted embedding produced by the encoder to generate output (tokens with highest probability based on input). Some major differences between decoder and encoder architecture include...
+  1. _Two Self-Attention Layers_: decoder has an additional self-attention layer
+  2. _Two Types of Self-Attention_: masked multi-head attention uses casual masking to prevent comparisons against future token, and encoder-decoder multi-head attention has each output token calculate attention scores against all input tokens better to establish the relationship between input and output. This also employs casual masking to avoid influence from future output tokens.
+* Decoder structure is as follows...
+  1. _Embedding Layer_: converts the output tokens into vector representations
+  2. _Positional Encoder_: adds positional information to the embeddings
+  3. _Residual Connection_: feeds into a normalization layer
+  4. _Masked Self-Attention Mechanism_: ensures model doesn't see future tokens
+  5. _Normalization Layer_: stabilizes output of the masked self-attention mechanism
+  6. _Residual Connection_: feeds into another normalization layer
+  7. _Encoder-Decoder Self-Attention Mechanism_: establishes relationships between input and output tokens
+  8. _Normalization Layer_: ensures stable training by normalizing the output
+  9. _Residual Connection_: feeds into another normalization layer
+  10. _Feed-Forward Network_: captures higher-level features
+  11. _Normalization Layer_: maintains stablitity in the output.
+
+## Combining the Encoder and Decoder to Complete the Transformer
+* 
+* Source: https://blog.spheron.network/how-to-build-an-llm-from-scratch-a-step-by-step-guide
