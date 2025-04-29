@@ -160,5 +160,62 @@ print(softmax([3.2, 1.3, 0.2, 0.8]))
   11. _Normalization Layer_: maintains stablitity in the output.
 
 ## Combining the Encoder and Decoder to Complete the Transformer
-* 
+* Transformers usually contain multiple encoders and decoders stacked in equal numbers. Stacking enhances the transformer's capabilities, allowing layers to capture different characteristics and underlying patterns from input, therefore improving the LLM's performance.
+## Data Curation
+* Consequences of poor training data include...
+  * Inaccuracy: a model trained on incorrect data produces inaccurate answers
+  * Bias: the model will learn any inherent bias in the data
+  * Unpredictability: the model may produce incoherent or nonsensical answers, making it difficult to diagnose issues
+  * Poor Resource Utilization: poor-quality data prolongs training, leading to higher computational, personnel, and energy costs
+* For a model to effectively understand linguistic and semantic relationships between text, it needs vast amounts of data. GPT-3 was trained on 0.5 trillion tokens (the equivalent of 5 million novels) and had 175 billion parameters.
+## Characteristics of a High-Quality Dataset
+* These are key characteristics to consider when creating a dataset....
+ * _Filtered for Inaccuracies_: ensure data is accurate and reliable
+ * _Minimal Biases and Harmful Speech_: avoid data that could introduce biases or contain harmful language.
+ * _Cleaned Data_: filter for misspellings, cross-domain homographs, spelling variations, contractions, punctuation, boilerplate text, markup (HTML), and non-textual components like emojis.
+ * _Deduplication_: remove repeated information to prevent bias amplification
+ * _Privacy Redaction_: eliminate confidential or sensitive data
+ * _Diverse Data_: include a wide range of formats and subjects (EX: academic writing, prose, website text, coding samples, mathematics)
+* Using the same data for training and evaluation risks overfitting, where the model becomes too familiar with the training data and fails to generalize to new data.
+## Where Can You Source Data for Training an LLM?
+* _Existing Public Datasets_ include...
+ * _The Common Crawl_: a dataset containing terabytes of raw web data from billions of pages
+ * _The Pile_: a popular text corpus containing data from 22 sources, in the categories of academic writing (arXiv), online or scraped resources (Wikipedia), prose (Project Gutenberg), dialog (YouTube subtitles), and miscellaneous (GitHub).
+ * _StarCoder_: nearly 800GB of coding examples in various programming languages
+ * _HuggingFace_: an online resource hub with over 100,000 public datasets
+* _Private Datasets_: curated in-house or purchased from specialized organizations
+* _Directly from the Internet_: scraping data directly from websites is not recommended due to possible inaccuracies, biases, and data ownership issues.
+## Training Your Custom LLM
+* Training involves passing textual data through an LLM's neural network to initialize its parameters (weights and biases). This involves two main steps....
+ 1. _Forward Propagation_: training data is fed into the LLM, which learns language patterns and semantics to accurately predict output. Each layer's output serves as the input to the next layer, culminating in the final output layer generating a predicted output based on the input sequence and learned parameters.
+ 2. _Backward Propagation_: the LLM's parameters are updated based on prediction errors. Gradients, indicating how many parameters should be adjusted to increase accuracy, are propagated backward through the network. Each layer's parameters are adjusted to minimize the loss function, which calculates the difference between the target and actual output.
+## How Long Does it Take to Train an LLM from Scratch?
+* Training duration is based on...
+ * Complexity of the desired use case
+ * Amount, complexity, and quality of available training data
+ * Available computational resources
+* Training for a simple task on a small dataset may take a few hours, while complex tasks with large datasets could take months.
+## LLM Training Techniques
+* _Data Parallelization_: divides training data into shards distributed across GPUs.
+* _Tensor Parallelization_: splits matrix multiplications into smaller calculations performed simulataneously on multiple GPUs
+* _Pipeline Parallelization_: distributes transformer layers across GPUs for parallel processing
+* _Model Parallelization_: distributes the model across GPUs, using the same data for each part of the model.
+* _Gradient Checkpointing_: reduces memory requirements by storing only a subset of intermediate activations at defined checkpoints during forward propagation.
+## LLM Hyperparameters
+* Hyperparameters are set before training, some important ones include...
+ * _Batch Size_: the number of instances from the training data fed into the model at each timestep. Larger batches use more memory but speed up training, while smaller batches use less memory but take longer.
+ * _Learning Rate_: the speed at which the LLM updates in response to its loss function. A higher learning rate expedites training but may cause instability and overfitting, while lower rates are stable but lengthen training.
+ * _Temperature_: adjusts the range of possible outputs to control the LLM's creativity. Lower values generate predictable output, higher values increase creativity
+## Fine-Tuning Your LLM
+* _Full Fine-Tuning_: updates all base model parameters, creating a new version with altered weighting. It is comprehensive but resource-intensive
+* _Transer Learning_: leverages the model's pre-trained knowledge, freezing many or all base LLM layers and fine-tuning with a smaller, task-specific dataset. It is less time-consuming and resource-intensive than full fine-tuning.
+## LLM Benchmarks
+* Benchmarks provide a consistent way to assess LLM performance and compare it against existing LLMs. Each benchmark includes its own dataset, and some examples are...
+ * _ARC (AI2 Reasoning Challenge)_: evaluate knowledge and reasoning skills through question-answer (QA) tasks.
+ * _HellaSwag_: tests commonsense reasoning and natural language inference (NLI) capabilities using sentence completion exercises.
+ * _MMLU (Massive Multitask Language Understanding)_: consists of 15,908 questions across 57 tasks to measure natural language understanding (NLU)
+ * _TruthfulQA_: measures the model's ability to generate truthful answers, assessing its tendency to "hallucinate".
+ * _GSM8K_: evaluates multi-step mathematical abilities with 8,500 grade-school-level math word problems
+ * _HumanEval_: assesses the LLM's ability to generate functionally correct code
+ * _MT Bench_: evaluates the LLM's effectiveness in engaging in multi-turn dialogues, similar to chatbot interactions.
 * Source: https://blog.spheron.network/how-to-build-an-llm-from-scratch-a-step-by-step-guide
